@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>XJJ</title>
+<style>
+/* =====================================================================
+   XJJ – Single File Video Player
+   Source 1 → get/videos.txt  (one video URL per line)
+   Source 2 → get/videos.json (array of objects: [{url:"…",title:"…"},...])
+   ===================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #0d0d0d;
+  --surface:     #1a1a1a;
+  --border:      #2e2e2e;
+  --accent:      #fe2c55;
+  --accent2:     #25f4ee;
+  --text:        #ffffff;
+  --text-muted:  #888888;
+  --btn-bg:      rgba(255,255,255,0.12);
+  --btn-hover:   rgba(255,255,255,0.22);
+  --radius:      10px;
+  --sidebar-w:   220px;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── TOP NAV (Mobile only) ─────────────────────────────────── */
+#topbar {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 52px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.75), transparent);
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+#topbar .logo-text {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.source-toggle-mobile { display: flex; gap: 6px; }
+.source-toggle-mobile button {
+  background: var(--btn-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  backdrop-filter: blur(6px);
+}
+.source-toggle-mobile button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ── APP SHELL ─────────────────────────────────────────────── */
+#app {
+  display: flex;
+  width: 100%; height: 100%;
+}
+
+/* ── PC SIDEBAR ────────────────────────────────────────────── */
+#sidebar {
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 24px 16px 20px;
+  gap: 4px;
+  z-index: 10;
+}
+.sidebar-logo {
+  font-size: 1.7rem;
+  font-weight: 900;
+  letter-spacing: 3px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 22px;
+  text-align: center;
+}
+.sidebar-section-label {
+  font-size: 0.63rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  margin: 12px 0 4px 4px;
+}
+.sidebar-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  font-size: 0.83rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: left;
+  width: 100%;
+}
+.sidebar-btn:hover { background: var(--btn-bg); }
+.sidebar-btn.active {
+  background: rgba(254,44,85,0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-icon { font-size: 1rem; }
+
+.sidebar-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 8px 0;
+}
+
+/* Toggle controls */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px;
+}
+.toggle-row span { font-size: 0.82rem; }
+.toggle { position: relative; width: 40px; height: 22px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0;
+  background: var(--border);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.25s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  left: 3px; top: 3px;
+  width: 16px; height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.25s;
+}
+.toggle input:checked + .toggle-slider { background: var(--accent); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+/* Nav buttons */
+.nav-btn-group {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-top: auto;
+}
+.nav-arrow-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--btn-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px;
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  width: 100%;
+}
+.nav-arrow-btn:hover { background: var(--btn-hover); }
+.pass-btn {
+  background: linear-gradient(135deg, var(--accent), #c41e3e) !important;
+  border-color: transparent !important;
+  font-size: 0.9rem;
+  padding: 12px !important;
+}
+
+/* ── VIDEO AREA ─────────────────────────────────────────────── */
+#video-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+}
+
+#video-container {
+  width: 100%; height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+#main-video {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  cursor: pointer;
+  background: #000;
+}
+
+/* Loading / error overlay */
+#overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.75);
+  z-index: 5;
+  gap: 14px;
+}
+#overlay.hidden { display: none; }
+.spinner {
+  width: 44px; height: 44px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#overlay-msg { font-size: 0.9rem; color: var(--text-muted); }
+
+/* Play/pause icon flash */
+#play-flash {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  font-size: 3.5rem;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+  text-shadow: 0 0 20px rgba(0,0,0,0.6);
+}
+#play-flash.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  animation: flashOut 0.5s ease forwards 0.15s;
+}
+@keyframes flashOut { to { opacity: 0; transform: translate(-50%,-50%) scale(1.3); } }
+
+/* Swipe hint */
+#swipe-hint {
+  position: absolute;
+  bottom: 72px; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(4px);
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.7);
+  pointer-events: none;
+  z-index: 20;
+  transition: opacity 1s;
+}
+#swipe-hint.hidden { opacity: 0; }
+
+/* Mobile bottom controls */
+#mobile-controls {
+  display: none;
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 50;
+  background: linear-gradient(transparent, rgba(0,0,0,0.82));
+  padding: 40px 16px 18px;
+  flex-direction: column;
+  gap: 10px;
+}
+.mobile-btn-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.mobile-btn {
+  background: var(--btn-bg);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: var(--text);
+  padding: 9px 18px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  backdrop-filter: blur(6px);
+}
+.mobile-btn:hover { background: var(--btn-hover); }
+.mobile-btn.btn-active { background: var(--accent); border-color: var(--accent); }
+.mobile-btn.pass { background: var(--accent); border-color: var(--accent); }
+
+/* ── RIGHT INFO PANEL (PC) ──────────────────────────────────── */
+#info-panel {
+  display: none;
+  flex-direction: column;
+  width: 200px;
+  min-width: 200px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  padding: 20px 14px;
+  gap: 14px;
+  overflow-y: auto;
+}
+.info-label {
+  font-size: 0.63rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.info-value {
+  font-size: 0.83rem;
+  word-break: break-all;
+  color: var(--text);
+  line-height: 1.5;
+}
+.info-badge {
+  display: inline-block;
+  background: rgba(254,44,85,0.15);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+/* Video counter */
+#video-counter {
+  position: absolute;
+  top: 14px; right: 14px;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.7);
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* Toast */
+#toast {
+  position: fixed;
+  bottom: 30px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(25,25,25,0.95);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 22px;
+  border-radius: 24px;
+  font-size: 0.82rem;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 200;
+  transition: opacity 0.3s, transform 0.3s;
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+}
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Keyboard shortcuts panel */
+#shortcuts {
+  position: absolute;
+  bottom: 14px; left: 14px;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.5);
+  pointer-events: none;
+  z-index: 20;
+  line-height: 1.8;
+}
+
+/* ── RESPONSIVE ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  #sidebar    { display: none !important; }
+  #info-panel { display: none !important; }
+  #topbar     { display: flex; }
+  #mobile-controls { display: flex; }
+  #shortcuts  { display: none; }
+  #main-video { height: 100%; object-fit: cover; width: 100%; }
+}
+@media (min-width: 769px) and (max-width: 1100px) {
+  #info-panel { display: none; }
+}
+@media (min-width: 769px) {
+  #info-panel { display: flex; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── TOPBAR (mobile) ─────────────────────────────────────── -->
+<div id="topbar">
+  <span class="logo-text">XJJ</span>
+  <div class="source-toggle-mobile">
+    <button id="src1-mobile" class="active" onclick="switchSource(1)">Source 1</button>
+    <button id="src2-mobile" onclick="switchSource(2)">Source 2</button>
+  </div>
+</div>
+
+<!-- ── APP ────────────────────────────────────────────────── -->
+<div id="app">
+
+  <!-- ── SIDEBAR (PC) ─────────────────────────────────────── -->
+  <nav id="sidebar">
+    <div class="sidebar-logo">XJJ</div>
+
+    <div class="sidebar-section-label">Source</div>
+    <button class="sidebar-btn active" id="src1-btn" onclick="switchSource(1)">
+      <span class="btn-icon">📄</span> Source 1 (TXT)
+    </button>
+    <button class="sidebar-btn" id="src2-btn" onclick="switchSource(2)">
+      <span class="btn-icon">🗂️</span> Source 2 (JSON)
+    </button>
+
+    <hr class="sidebar-divider">
+
+    <div class="sidebar-section-label">Options</div>
+    <div class="toggle-row">
+      <span>Auto Next</span>
+      <label class="toggle">
+        <input type="checkbox" id="auto-next-toggle" onchange="toggleAutoNext()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <span>Loop</span>
+      <label class="toggle">
+        <input type="checkbox" id="loop-toggle" onchange="toggleLoop()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <hr class="sidebar-divider">
+    <div class="sidebar-section-label">Navigate</div>
+    <div class="nav-btn-group">
+      <button class="nav-arrow-btn" onclick="prevVideo()">⬆&nbsp; Previous</button>
+      <button class="nav-arrow-btn pass-btn" onclick="nextVideo()">⬇&nbsp; PASS / Next</button>
+    </div>
+  </nav>
+
+  <!-- ── VIDEO AREA ─────────────────────────────────────────── -->
+  <div id="video-area">
+
+    <div id="video-counter">–/–</div>
+
+    <div id="video-container">
+      <video id="main-video"
+             playsinline
+             webkit-playsinline
+             preload="auto"
+             onclick="togglePlay()">
+      </video>
+      <div id="play-flash"></div>
+    </div>
+
+    <!-- Loading / error overlay -->
+    <div id="overlay">
+      <div class="spinner"></div>
+      <div id="overlay-msg">Loading videos…</div>
+    </div>
+
+    <!-- Keyboard shortcuts hint (PC) -->
+    <div id="shortcuts">
+      Space: Play/Pause &nbsp;·&nbsp; ↑/↓: Prev/Next<br>
+      1/2: Switch Source &nbsp;·&nbsp; A: Auto &nbsp;·&nbsp; L: Loop<br>
+      F: Fullscreen &nbsp;·&nbsp; Dbl-click: Fullscreen
+    </div>
+
+    <!-- Swipe hint (mobile) -->
+    <div id="swipe-hint">↑ Swipe up for next &nbsp;·&nbsp; ↓ Swipe down for previous</div>
+
+    <!-- Mobile bottom controls -->
+    <div id="mobile-controls">
+      <div class="mobile-btn-row">
+        <button class="mobile-btn" id="auto-mobile" onclick="toggleAutoNext()">Auto: OFF</button>
+        <button class="mobile-btn" id="loop-mobile" onclick="toggleLoop()">Loop: OFF</button>
+      </div>
+      <div class="mobile-btn-row">
+        <button class="mobile-btn" onclick="prevVideo()">⬆ Prev</button>
+        <button class="mobile-btn pass" onclick="nextVideo()">⬇ PASS</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── RIGHT INFO PANEL (PC) ──────────────────────────────── -->
+  <aside id="info-panel">
+    <div>
+      <div class="info-label">Source</div>
+      <span class="info-badge" id="info-source">Source 1</span>
+    </div>
+    <div>
+      <div class="info-label">Index</div>
+      <div class="info-value" id="info-index">–</div>
+    </div>
+    <div>
+      <div class="info-label">Title</div>
+      <div class="info-value" id="info-title">–</div>
+    </div>
+    <div>
+      <div class="info-label">URL</div>
+      <div class="info-value" id="info-url" style="font-size:0.68rem;">–</div>
+    </div>
+    <div style="margin-top:auto; padding-top:10px;">
+      <div class="info-label">Tips</div>
+      <div style="font-size:0.7rem; color:var(--text-muted); line-height:1.7;">
+        Edit <code style="color:var(--accent2)">CONFIG</code> at top of &lt;script&gt; to set your source file paths.
+        <br><br>
+        Source 1: <code style="color:var(--accent2)">videos.txt</code> — one URL per line (82 videos)
+        <br><br>
+        Source 2: <code style="color:var(--accent2)">videos.json</code> — nested array format (852 videos)
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ================================================================
+     JAVASCRIPT
+     ================================================================ -->
+<script>
+// ──────────────────────────────────────────────────────────────────
+//  CONFIGURATION
+//  Adjust these paths to match where your files are located.
+//
+//  source1: plain text file — one direct video URL per line
+//           e.g.  https://example.com/video1.mp4
+//
+//  source2: JSON file — supports all of these formats:
+//           ["url1", "url2", ...]                  flat array of strings
+//           [["url1", "url2", ...]]                nested array (one outer item)
+//           [{"url":"...","title":"..."},  ...]    array of objects
+// ──────────────────────────────────────────────────────────────────
+const CONFIG = {
+  source1: 'videos.txt',
+  source2: 'videos.json',
+};
+
+// ──────────────────────────────────────────────────────────────────
+//  STATE
+// ──────────────────────────────────────────────────────────────────
+const state = {
+  source:   1,
+  videos:   [],   // [{url, title}]
+  index:    0,
+  autoNext: false,
+  loop:     false,
+};
+
+// ──────────────────────────────────────────────────────────────────
+//  DOM
+// ──────────────────────────────────────────────────────────────────
+const video      = document.getElementById('main-video');
+const overlay    = document.getElementById('overlay');
+const overlayMsg = document.getElementById('overlay-msg');
+const playFlash  = document.getElementById('play-flash');
+const swipeHint  = document.getElementById('swipe-hint');
+const counter    = document.getElementById('video-counter');
+const toast      = document.getElementById('toast');
+
+// ──────────────────────────────────────────────────────────────────
+//  LOAD SOURCE
+// ──────────────────────────────────────────────────────────────────
+async function loadSource(num) {
+  const path = (num === 1) ? CONFIG.source1 : CONFIG.source2;
+  showOverlay('Loading source ' + num + '…');
+
+  try {
+    const res = await fetch(path + '?_=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + path);
+    const text = await res.text().then(t => t.trim());
+
+    let videos = [];
+
+    if (num === 1) {
+      // Plain text: one URL per line
+      videos = text.split('\n')
+        .map(l => l.trim())
+        .filter(l => l.length > 0 && !l.startsWith('#'))
+        .map(url => ({ url, title: '' }));
+    } else {
+      // JSON — handles multiple structures:
+      //   flat:    ["url1", "url2", ...]
+      //   nested:  [["url1", "url2", ...]]  ← your videos.json uses this
+      //   objects: [{url, title}, ...]
+      const raw = JSON.parse(text);
+      if (!Array.isArray(raw)) throw new Error('Source 2 JSON must be an array');
+      // Unwrap nested array: [[url, url, ...]] → [url, url, ...]
+      const flat = (raw.length === 1 && Array.isArray(raw[0])) ? raw[0] : raw;
+      videos = flat
+        .map(item => {
+          if (typeof item === 'string') return { url: item.trim(), title: '' };
+          const url = (item.url || item.src || item.video || item.link || '').trim();
+          const title = item.title || item.name || item.label || '';
+          return { url, title };
+        })
+        .filter(v => v.url);
+    }
+
+    if (videos.length === 0) throw new Error('No video URLs found in source ' + num);
+
+    state.videos = videos;
+    // Start on a random video
+    state.index = Math.floor(Math.random() * videos.length);
+    hideOverlay();
+    playCurrentVideo();
+    showToast('✓ Source ' + num + ' — ' + videos.length + ' videos loaded');
+  } catch (err) {
+    showOverlay('⚠  ' + err.message);
+    console.error('[XJJ] Source load error:', err);
+    showToast('Error loading source ' + num);
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────
+//  PLAYBACK
+// ──────────────────────────────────────────────────────────────────
+function playCurrentVideo() {
+  if (!state.videos.length) return;
+  const item = state.videos[state.index];
+
+  // Update UI
+  const label = (state.index + 1) + ' / ' + state.videos.length;
+  counter.textContent = label;
+  document.getElementById('info-index').textContent = label;
+  document.getElementById('info-title').textContent = item.title || '(no title)';
+  document.getElementById('info-url').textContent   = item.url;
+
+  showOverlay('Loading…');
+  video.src  = item.url;
+  video.loop = state.loop;
+  video.load();
+  video.play().catch(() => {
+    // Blocked by autoplay policy – show click-to-play
+    hideOverlay();
+    showOverlay('▶ Tap / click to play');
+  });
+}
+
+function nextVideo() {
+  if (!state.videos.length) return;
+  state.index = (state.index + 1) % state.videos.length;
+  playCurrentVideo();
+}
+
+function prevVideo() {
+  if (!state.videos.length) return;
+  state.index = (state.index - 1 + state.videos.length) % state.videos.length;
+  playCurrentVideo();
+}
+
+function togglePlay() {
+  if (!video.src) return;
+  if (video.paused) { video.play();  flashIcon('▶'); }
+  else              { video.pause(); flashIcon('⏸'); }
+}
+
+function flashIcon(icon) {
+  playFlash.textContent = icon;
+  playFlash.style.cssText = `
+    position:absolute; left:50%; top:50%;
+    transform:translate(-50%,-50%) scale(1);
+    font-size:3.5rem; opacity:1;
+    pointer-events:none; z-index:10;
+    text-shadow:0 0 20px rgba(0,0,0,0.6);
+    transition:none;
+  `;
+  clearTimeout(playFlash._t);
+  playFlash._t = setTimeout(() => {
+    playFlash.style.transition = 'opacity 0.4s, transform 0.4s';
+    playFlash.style.opacity    = '0';
+    playFlash.style.transform  = 'translate(-50%,-50%) scale(1.4)';
+  }, 120);
+}
+
+// ──────────────────────────────────────────────────────────────────
+//  VIDEO EVENTS
+// ──────────────────────────────────────────────────────────────────
+video.addEventListener('canplay',  hideOverlay);
+video.addEventListener('playing',  hideOverlay);
+video.addEventListener('waiting',  () => showOverlay('Buffering…'));
+video.addEventListener('stalled',  () => showOverlay('Stalled…'));
+video.addEventListener('error',    () => {
+  showOverlay('⚠ Video error');
+  if (state.autoNext) setTimeout(nextVideo, 2000);
+});
+video.addEventListener('ended', () => {
+  if (state.autoNext && !state.loop) nextVideo();
+});
+video.addEventListener('dblclick', toggleFullscreen);
+
+// ──────────────────────────────────────────────────────────────────
+//  SOURCE SWITCHING
+// ──────────────────────────────────────────────────────────────────
+function switchSource(num) {
+  state.source = num;
+
+  document.getElementById('src1-btn').classList.toggle('active', num === 1);
+  document.getElementById('src2-btn').classList.toggle('active', num === 2);
+  document.getElementById('src1-mobile').classList.toggle('active', num === 1);
+  document.getElementById('src2-mobile').classList.toggle('active', num === 2);
+  document.getElementById('info-source').textContent = 'Source ' + num;
+
+  loadSource(num);
+}
+
+// ──────────────────────────────────────────────────────────────────
+//  TOGGLES
+// ──────────────────────────────────────────────────────────────────
+function toggleAutoNext() {
+  state.autoNext = !state.autoNext;
+  document.getElementById('auto-next-toggle').checked = state.autoNext;
+  const btn = document.getElementById('auto-mobile');
+  btn.textContent = 'Auto: ' + (state.autoNext ? 'ON' : 'OFF');
+  btn.classList.toggle('btn-active', state.autoNext);
+  showToast('Auto Next ' + (state.autoNext ? 'ON' : 'OFF'));
+}
+
+function toggleLoop() {
+  state.loop    = !state.loop;
+  video.loop    = state.loop;
+  document.getElementById('loop-toggle').checked = state.loop;
+  const btn = document.getElementById('loop-mobile');
+  btn.textContent = 'Loop: ' + (state.loop ? 'ON' : 'OFF');
+  btn.classList.toggle('btn-active', state.loop);
+  showToast('Loop ' + (state.loop ? 'ON' : 'OFF'));
+}
+
+// ──────────────────────────────────────────────────────────────────
+//  FULLSCREEN
+// ──────────────────────────────────────────────────────────────────
+function toggleFullscreen() {
+  if (document.fullscreenElement || document.webkitFullscreenElement) {
+    (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  } else {
+    const el = video;
+    (el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen)?.call(el);
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────
+//  KEYBOARD
+// ──────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+  switch (e.key) {
+    case 'ArrowDown': case 'ArrowRight': case 'n': case 'N':
+      e.preventDefault(); nextVideo(); break;
+    case 'ArrowUp': case 'ArrowLeft': case 'p': case 'P':
+      e.preventDefault(); prevVideo(); break;
+    case ' ':
+      e.preventDefault(); togglePlay(); break;
+    case '1': switchSource(1); break;
+    case '2': switchSource(2); break;
+    case 'a': case 'A': toggleAutoNext(); break;
+    case 'l': case 'L': toggleLoop(); break;
+    case 'f': case 'F': toggleFullscreen(); break;
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────
+//  TOUCH / SWIPE (Mobile)
+// ──────────────────────────────────────────────────────────────────
+let touchStartY = 0, touchStartX = 0;
+const SWIPE_MIN = 50;
+
+document.addEventListener('touchstart', e => {
+  touchStartY = e.touches[0].clientY;
+  touchStartX = e.touches[0].clientX;
+}, { passive: true });
+
+document.addEventListener('touchend', e => {
+  const dy = touchStartY - e.changedTouches[0].clientY;
+  const dx = touchStartX - e.changedTouches[0].clientX;
+  if (Math.abs(dy) > SWIPE_MIN && Math.abs(dy) > Math.abs(dx) * 1.2) {
+    dy > 0 ? nextVideo() : prevVideo();
+  }
+}, { passive: true });
+
+// ──────────────────────────────────────────────────────────────────
+//  OVERLAY HELPERS
+// ──────────────────────────────────────────────────────────────────
+function showOverlay(msg) {
+  overlay.classList.remove('hidden');
+  overlayMsg.textContent = msg || '';
+}
+function hideOverlay() {
+  overlay.classList.add('hidden');
+}
+
+// ──────────────────────────────────────────────────────────────────
+//  TOAST
+// ──────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+}
+
+// ──────────────────────────────────────────────────────────────────
+//  HIDE SWIPE HINT AFTER 5s
+// ──────────────────────────────────────────────────────────────────
+setTimeout(() => swipeHint.classList.add('hidden'), 5000);
+document.addEventListener('touchend', () => swipeHint.classList.add('hidden'), { once: true });
+
+// ──────────────────────────────────────────────────────────────────
+//  INIT
+// ──────────────────────────────────────────────────────────────────
+loadSource(1);
+</script>
+</body>
+</html>
