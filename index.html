@@ -56,23 +56,91 @@ html, body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-.source-toggle-mobile { display: flex; gap: 6px; }
-.source-toggle-mobile button {
+/* ── SOURCE DROPDOWN (shared) ───────────────────────────────────── */
+.source-dropdown-wrap {
+  position: relative;
+}
+.source-dropdown-wrap .dd-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   background: var(--btn-bg);
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 0.72rem;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
-  backdrop-filter: blur(6px);
+  transition: background 0.15s, border-color 0.15s;
+  user-select: none;
+  white-space: nowrap;
 }
-.source-toggle-mobile button.active {
-  background: var(--accent);
+.source-dropdown-wrap .dd-selected:hover {
+  background: var(--btn-hover);
+}
+.source-dropdown-wrap .dd-selected.open {
   border-color: var(--accent);
+  background: rgba(254,44,85,0.12);
 }
+.source-dropdown-wrap .dd-arrow {
+  font-size: 0.65rem;
+  transition: transform 0.2s;
+  opacity: 0.7;
+}
+.source-dropdown-wrap .dd-selected.open .dd-arrow {
+  transform: rotate(180deg);
+}
+.source-dropdown-wrap .dd-menu {
+  display: none;
+  position: absolute;
+  left: 0;
+  background: #1e1e26;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  z-index: 500;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  min-width: 100%;
+  white-space: nowrap;
+}
+.source-dropdown-wrap .dd-menu.open { display: block; }
+/* Sidebar dropdown opens downward */
+#sidebar .dd-menu { top: calc(100% + 4px); }
+/* Mobile topbar dropdown opens downward */
+#topbar .dd-menu  { top: calc(100% + 4px); }
+.source-dropdown-wrap .dd-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  color: var(--text);
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+.source-dropdown-wrap .dd-menu button:last-child { border-bottom: none; }
+.source-dropdown-wrap .dd-menu button:hover { background: var(--btn-bg); }
+.source-dropdown-wrap .dd-menu button.active {
+  background: rgba(254,44,85,0.15);
+  color: var(--accent);
+  font-weight: 700;
+}
+.source-dropdown-wrap .dd-menu .dd-badge {
+  font-size: 0.6rem;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 700;
+  margin-left: auto;
+}
+.dd-badge.badge-list { background: rgba(37,244,238,0.15); color: var(--accent2); }
+.dd-badge.badge-api  { background: rgba(254,44,85,0.15);  color: var(--accent);  }
 
 /* ── APP SHELL ─────────────────────────────────────────────── */
 #app {
@@ -309,41 +377,8 @@ html, body {
 .mobile-btn.pass { background: var(--accent); border-color: var(--accent); }
 
 /* ── RIGHT INFO PANEL (PC) ──────────────────────────────────── */
-#info-panel {
-  display: none;
-  flex-direction: column;
-  width: 200px;
-  min-width: 200px;
-  background: var(--surface);
-  border-left: 1px solid var(--border);
-  padding: 20px 14px;
-  gap: 14px;
-  overflow-y: auto;
-}
-.info-label {
-  font-size: 0.63rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.2px;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-}
-.info-value {
-  font-size: 0.83rem;
-  word-break: break-all;
-  color: var(--text);
-  line-height: 1.5;
-}
-.info-badge {
-  display: inline-block;
-  background: rgba(254,44,85,0.15);
-  border: 1px solid var(--accent);
-  color: var(--accent);
-  padding: 2px 10px;
-  border-radius: 20px;
-  font-size: 0.7rem;
-  font-weight: 700;
-}
+
+/* source dropdowns handled by .source-dropdown-wrap above */
 
 /* Video counter */
 #video-counter {
@@ -400,17 +435,14 @@ html, body {
 /* ── RESPONSIVE ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
   #sidebar    { display: none !important; }
-  #info-panel { display: none !important; }
   #topbar     { display: flex; }
   #mobile-controls { display: flex; }
   #shortcuts  { display: none; }
   #main-video { height: 100%; object-fit: cover; width: 100%; }
 }
 @media (min-width: 769px) and (max-width: 1100px) {
-  #info-panel { display: none; }
 }
 @media (min-width: 769px) {
-  #info-panel { display: flex; }
 }
 </style>
 </head>
@@ -419,9 +451,12 @@ html, body {
 <!-- ── TOPBAR (mobile) ─────────────────────────────────────── -->
 <div id="topbar">
   <span class="logo-text">XJJ</span>
-  <div class="source-toggle-mobile">
-    <button id="src1-mobile" class="active" onclick="switchSource(1)">Source 1</button>
-    <button id="src2-mobile" onclick="switchSource(2)">Source 2</button>
+  <div class="source-dropdown-wrap" id="mobile-dd-wrap">
+    <div class="dd-selected" id="mobile-dd-selected" onclick="toggleDropdown('mobile')">
+      <span id="mobile-dd-label">Source 1</span>
+      <span class="dd-arrow">▼</span>
+    </div>
+    <div class="dd-menu" id="mobile-dd-menu"></div>
   </div>
 </div>
 
@@ -433,12 +468,13 @@ html, body {
     <div class="sidebar-logo">XJJ</div>
 
     <div class="sidebar-section-label">Source</div>
-    <button class="sidebar-btn active" id="src1-btn" onclick="switchSource(1)">
-      <span class="btn-icon">📄</span> Source 1 (TXT)
-    </button>
-    <button class="sidebar-btn" id="src2-btn" onclick="switchSource(2)">
-      <span class="btn-icon">🗂️</span> Source 2 (JSON)
-    </button>
+    <div class="source-dropdown-wrap" id="sidebar-dd-wrap">
+      <div class="dd-selected" id="sidebar-dd-selected" onclick="toggleDropdown('sidebar')">
+        <span id="sidebar-dd-label">Source 1</span>
+        <span class="dd-arrow">▼</span>
+      </div>
+      <div class="dd-menu" id="sidebar-dd-menu"></div>
+    </div>
 
     <hr class="sidebar-divider">
 
@@ -511,36 +547,6 @@ html, body {
 
   </div>
 
-  <!-- ── RIGHT INFO PANEL (PC) ──────────────────────────────── -->
-  <aside id="info-panel">
-    <div>
-      <div class="info-label">Source</div>
-      <span class="info-badge" id="info-source">Source 1</span>
-    </div>
-    <div>
-      <div class="info-label">Index</div>
-      <div class="info-value" id="info-index">–</div>
-    </div>
-    <div>
-      <div class="info-label">Title</div>
-      <div class="info-value" id="info-title">–</div>
-    </div>
-    <div>
-      <div class="info-label">URL</div>
-      <div class="info-value" id="info-url" style="font-size:0.68rem;">–</div>
-    </div>
-    <div style="margin-top:auto; padding-top:10px;">
-      <div class="info-label">Tips</div>
-      <div style="font-size:0.7rem; color:var(--text-muted); line-height:1.7;">
-        Edit <code style="color:var(--accent2)">CONFIG</code> at top of &lt;script&gt; to set your source file paths.
-        <br><br>
-        Source 1: <code style="color:var(--accent2)">videos.txt</code> — one URL per line (82 videos)
-        <br><br>
-        Source 2: <code style="color:var(--accent2)">videos.json</code> — nested array format (852 videos)
-      </div>
-    </div>
-  </aside>
-
 </div>
 
 <!-- Toast -->
@@ -551,32 +557,45 @@ html, body {
      ================================================================ -->
 <script>
 // ──────────────────────────────────────────────────────────────────
-//  CONFIGURATION
-//  Adjust these paths to match where your files are located.
+//  SOURCES
 //
-//  source1: plain text file — one direct video URL per line
-//           e.g.  https://example.com/video1.mp4
+//  type: 'list' — loads a file once, iterates through URLs
+//    format: 'txt'  → one URL per line
+//    format: 'json' → ["url",...] or [["url",...]] or [{url,title},...]
 //
-//  source2: JSON file — supports all of these formats:
-//           ["url1", "url2", ...]                  flat array of strings
-//           [["url1", "url2", ...]]                nested array (one outer item)
-//           [{"url":"...","title":"..."},  ...]    array of objects
+//  type: 'api'  — each PASS hits the API for a fresh random video
+//                 (the endpoint redirects straight to an .mp4)
 // ──────────────────────────────────────────────────────────────────
-const CONFIG = {
-  source1: 'videos.txt',
-  source2: 'videos.json',
-};
+const SOURCES = [
+  { id: 1, label: 'Local TXT',      type: 'list', format: 'txt',  url: 'videos.txt'  },
+  { id: 2, label: 'Local JSON',     type: 'list', format: 'json', url: 'videos.json' },
+  { id: 3, label: 'CunShao PC',     type: 'api',                  url: 'https://www.cunshao.com/666666/api/pc.php'           },
+  { id: 4, label: 'CunShao Web',    type: 'api',                  url: 'https://www.cunshao.com/666666/api/web.php'          },
+  { id: 5, label: 'YuJN',           type: 'api',                  url: 'http://api.yujn.cn/api/zzxjj.php'                   },
+  { id: 6, label: 'NRZJ Video',     type: 'api',                  url: 'http://v.nrzj.vip/video.php'                        },
+  { id: 7, label: 'NRZJ TikTok',    type: 'api',                  url: 'http://v.nrzj.vip/tiktok/video.php'                 },
+  { id: 8, label: 'NRZJ Video 2',   type: 'api',                  url: 'http://video.nrzj.vip/video.php'                    },
+  { id: 9, label: 'NRZJ TikTok 2',  type: 'api',                  url: 'http://video.nrzj.vip/tiktok/video.php'             },
+];
 
 // ──────────────────────────────────────────────────────────────────
 //  STATE
 // ──────────────────────────────────────────────────────────────────
 const state = {
-  source:   1,
-  videos:   [],   // [{url, title}]
-  index:    0,
-  autoNext: false,
-  loop:     false,
+  sourceId:     1,
+  videos:       [],    // [{url, title}] — list sources only
+  index:        0,     // list sources only
+  autoNext:     false,
+  loop:         false,
+  badUrls:      new Set(),  // failed URLs never retried (list sources)
+  skipCount:    0,
+  skipTimer:    null,
+  stalledTimer: null,
 };
+
+function activeSource() {
+  return SOURCES.find(s => s.id === state.sourceId) || SOURCES[0];
+}
 
 // ──────────────────────────────────────────────────────────────────
 //  DOM
@@ -592,54 +611,66 @@ const toast      = document.getElementById('toast');
 // ──────────────────────────────────────────────────────────────────
 //  LOAD SOURCE
 // ──────────────────────────────────────────────────────────────────
-async function loadSource(num) {
-  const path = (num === 1) ? CONFIG.source1 : CONFIG.source2;
-  showOverlay('Loading source ' + num + '…');
+async function loadSource(id) {
+  const src = SOURCES.find(s => s.id === id);
+  if (!src) return;
 
+  state.sourceId  = id;
+  state.badUrls   = new Set();
+  state.skipCount = 0;
+  clearTimeout(state.skipTimer);
+  clearTimeout(state.stalledTimer);
+
+  // Update dropdown labels + active state
+  updateDropdownLabel(src);
+
+  if (src.type === 'api') {
+    // No list to fetch — play directly; each call returns a fresh video
+    state.videos = [];
+    state.index  = 0;
+    hideOverlay();
+    playCurrentVideo();
+    showToast('✓ ' + src.label + ' (live API)');
+    return;
+  }
+
+  // List source — fetch the file
+  showOverlay('Loading ' + src.label + '…');
   try {
-    const res = await fetch(path + '?_=' + Date.now());
-    if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + path);
+    const res = await fetch(src.url + '?_=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text().then(t => t.trim());
-
     let videos = [];
 
-    if (num === 1) {
-      // Plain text: one URL per line
+    if (src.format === 'txt') {
       videos = text.split('\n')
         .map(l => l.trim())
         .filter(l => l.length > 0 && !l.startsWith('#'))
         .map(url => ({ url, title: '' }));
     } else {
-      // JSON — handles multiple structures:
-      //   flat:    ["url1", "url2", ...]
-      //   nested:  [["url1", "url2", ...]]  ← your videos.json uses this
-      //   objects: [{url, title}, ...]
+      // JSON: flat / nested [[...]] / [{url,title}]
       const raw = JSON.parse(text);
-      if (!Array.isArray(raw)) throw new Error('Source 2 JSON must be an array');
-      // Unwrap nested array: [[url, url, ...]] → [url, url, ...]
+      if (!Array.isArray(raw)) throw new Error('JSON must be an array');
       const flat = (raw.length === 1 && Array.isArray(raw[0])) ? raw[0] : raw;
       videos = flat
         .map(item => {
           if (typeof item === 'string') return { url: item.trim(), title: '' };
           const url = (item.url || item.src || item.video || item.link || '').trim();
-          const title = item.title || item.name || item.label || '';
-          return { url, title };
+          return { url, title: item.title || item.name || '' };
         })
         .filter(v => v.url);
     }
 
-    if (videos.length === 0) throw new Error('No video URLs found in source ' + num);
-
+    if (videos.length === 0) throw new Error('No video URLs found');
     state.videos = videos;
-    // Start on a random video
-    state.index = Math.floor(Math.random() * videos.length);
+    state.index  = Math.floor(Math.random() * videos.length);
     hideOverlay();
     playCurrentVideo();
-    showToast('✓ Source ' + num + ' — ' + videos.length + ' videos loaded');
+    showToast('✓ ' + src.label + ' — ' + videos.length + ' videos');
   } catch (err) {
     showOverlay('⚠  ' + err.message);
     console.error('[XJJ] Source load error:', err);
-    showToast('Error loading source ' + num);
+    showToast('Error loading ' + src.label);
   }
 }
 
@@ -647,34 +678,123 @@ async function loadSource(num) {
 //  PLAYBACK
 // ──────────────────────────────────────────────────────────────────
 function playCurrentVideo() {
+  const src = activeSource();
+  state.skipCount = 0;
+  clearTimeout(state.skipTimer);
+  clearTimeout(state.stalledTimer);
+
+  if (src.type === 'api') {
+    // Append timestamp so every call fetches a fresh random video
+    const apiUrl = src.url + (src.url.includes('?') ? '&' : '?') + '_=' + Date.now();
+    counter.textContent = src.label + ' — live';
+    showOverlay('Loading…');
+    video.src  = apiUrl;
+    video.loop = state.loop;
+    video.load();
+
+    // Watchdog: if nothing plays within 10 s, show timeout message
+    state.stalledTimer = setTimeout(() => {
+      if (overlay.classList.contains('hidden')) return;
+      console.warn('[XJJ] API timeout:', src.url);
+      showOverlay('⚠ API timed out — press PASS to try again');
+      showToast('API timed out');
+    }, 10000);
+
+    video.play().catch(() => {
+      clearTimeout(state.stalledTimer);
+      hideOverlay();
+      showOverlay('▶ Tap / click to play');
+    });
+    return;
+  }
+
+  // List source
   if (!state.videos.length) return;
-  const item = state.videos[state.index];
 
-  // Update UI
-  const label = (state.index + 1) + ' / ' + state.videos.length;
+  // Skip known-bad URLs, up to full-circle
+  const startIndex = state.index;
+  while (state.badUrls.has(state.videos[state.index].url)) {
+    state.index = (state.index + 1) % state.videos.length;
+    if (state.index === startIndex) {
+      showOverlay('⚠ All videos in this source failed to load');
+      showToast('No working videos in ' + src.label);
+      return;
+    }
+  }
+
+  const item  = state.videos[state.index];
+  const label = (state.index + 1) + ' / ' + state.videos.length +
+                (state.badUrls.size ? '  (' + state.badUrls.size + ' skipped)' : '');
   counter.textContent = label;
-  document.getElementById('info-index').textContent = label;
-  document.getElementById('info-title').textContent = item.title || '(no title)';
-  document.getElementById('info-url').textContent   = item.url;
-
   showOverlay('Loading…');
   video.src  = item.url;
   video.loop = state.loop;
   video.load();
+
+  // Watchdog: if canplay never fires within 8 s, mark as broken
+  state.stalledTimer = setTimeout(() => {
+    if (overlay.classList.contains('hidden')) return;
+    console.warn('[XJJ] Load timeout:', item.url);
+    markBadAndSkip('Timed out');
+  }, 8000);
+
   video.play().catch(() => {
-    // Blocked by autoplay policy – show click-to-play
+    clearTimeout(state.stalledTimer);
     hideOverlay();
     showOverlay('▶ Tap / click to play');
   });
 }
 
+// Mark current URL bad and auto-advance to next
+function markBadAndSkip(reason) {
+  const src = activeSource();
+  clearTimeout(state.stalledTimer);
+
+  if (src.type === 'api') {
+    // API errors: just retry with a fresh call
+    state.skipCount++;
+    showOverlay('⚠ ' + reason + ' — retrying…');
+    showToast('Retrying ' + src.label);
+    state.skipTimer = setTimeout(playCurrentVideo, 1000);
+    return;
+  }
+
+  const url = state.videos[state.index]?.url;
+  if (!url) return;
+
+  state.badUrls.add(url);
+  state.skipCount++;
+
+  const remaining = state.videos.length - state.badUrls.size;
+  console.warn('[XJJ] Bad video (' + reason + '):', url,
+               '| bad:', state.badUrls.size, '| remaining:', remaining);
+
+  if (remaining <= 0) {
+    showOverlay('⚠ All videos in this source failed to load');
+    showToast('No working videos in ' + src.label);
+    return;
+  }
+
+  showOverlay('⚠ ' + reason + ' — skipping… (' + state.badUrls.size + ' failed)');
+  showToast('Skipped broken video (' + remaining + ' remaining)');
+
+  state.skipTimer = setTimeout(() => {
+    state.index = (state.index + 1) % state.videos.length;
+    playCurrentVideo();
+  }, 800);
+}
+
 function nextVideo() {
+  const src = activeSource();
+  if (src.type === 'api') { playCurrentVideo(); return; } // fresh API call = new random video
   if (!state.videos.length) return;
   state.index = (state.index + 1) % state.videos.length;
   playCurrentVideo();
 }
 
 function prevVideo() {
+  const src = activeSource();
+  if (src.type === 'api') { playCurrentVideo(); return; } // no concept of "previous" for live API
   if (!state.videos.length) return;
   state.index = (state.index - 1 + state.videos.length) % state.videos.length;
   playCurrentVideo();
@@ -707,13 +827,36 @@ function flashIcon(icon) {
 // ──────────────────────────────────────────────────────────────────
 //  VIDEO EVENTS
 // ──────────────────────────────────────────────────────────────────
-video.addEventListener('canplay',  hideOverlay);
-video.addEventListener('playing',  hideOverlay);
-video.addEventListener('waiting',  () => showOverlay('Buffering…'));
-video.addEventListener('stalled',  () => showOverlay('Stalled…'));
-video.addEventListener('error',    () => {
-  showOverlay('⚠ Video error');
-  if (state.autoNext) setTimeout(nextVideo, 2000);
+video.addEventListener('canplay', () => {
+  clearTimeout(state.stalledTimer);
+  hideOverlay();
+});
+video.addEventListener('playing', () => {
+  clearTimeout(state.stalledTimer);
+  hideOverlay();
+});
+video.addEventListener('waiting', () => {
+  clearTimeout(state.stalledTimer);
+  state.stalledTimer = setTimeout(() => {
+    if (!overlay.classList.contains('hidden')) return;
+    markBadAndSkip('Stalled / no data');
+  }, 10000);
+  showOverlay('Buffering…');
+});
+video.addEventListener('stalled', () => {
+  clearTimeout(state.stalledTimer);
+  state.stalledTimer = setTimeout(() => {
+    markBadAndSkip('Stalled');
+  }, 6000);
+  showOverlay('Stalled…');
+});
+video.addEventListener('abort', () => {
+  if (video.src && video.readyState === 0) markBadAndSkip('Aborted');
+});
+video.addEventListener('error', () => {
+  const code  = video.error ? video.error.code : '?';
+  const msgs  = { 1:'Aborted', 2:'Network error', 3:'Decode error', 4:'Not supported' };
+  markBadAndSkip(msgs[code] || ('Error ' + code));
 });
 video.addEventListener('ended', () => {
   if (state.autoNext && !state.loop) nextVideo();
@@ -723,16 +866,9 @@ video.addEventListener('dblclick', toggleFullscreen);
 // ──────────────────────────────────────────────────────────────────
 //  SOURCE SWITCHING
 // ──────────────────────────────────────────────────────────────────
-function switchSource(num) {
-  state.source = num;
-
-  document.getElementById('src1-btn').classList.toggle('active', num === 1);
-  document.getElementById('src2-btn').classList.toggle('active', num === 2);
-  document.getElementById('src1-mobile').classList.toggle('active', num === 1);
-  document.getElementById('src2-mobile').classList.toggle('active', num === 2);
-  document.getElementById('info-source').textContent = 'Source ' + num;
-
-  loadSource(num);
+function switchSource(id) {
+  closeAllDropdowns();
+  loadSource(id);
 }
 
 // ──────────────────────────────────────────────────────────────────
@@ -748,8 +884,8 @@ function toggleAutoNext() {
 }
 
 function toggleLoop() {
-  state.loop    = !state.loop;
-  video.loop    = state.loop;
+  state.loop  = !state.loop;
+  video.loop  = state.loop;
   document.getElementById('loop-toggle').checked = state.loop;
   const btn = document.getElementById('loop-mobile');
   btn.textContent = 'Loop: ' + (state.loop ? 'ON' : 'OFF');
@@ -781,8 +917,6 @@ document.addEventListener('keydown', e => {
       e.preventDefault(); prevVideo(); break;
     case ' ':
       e.preventDefault(); togglePlay(); break;
-    case '1': switchSource(1); break;
-    case '2': switchSource(2); break;
     case 'a': case 'A': toggleAutoNext(); break;
     case 'l': case 'L': toggleLoop(); break;
     case 'f': case 'F': toggleFullscreen(); break;
@@ -837,9 +971,66 @@ setTimeout(() => swipeHint.classList.add('hidden'), 5000);
 document.addEventListener('touchend', () => swipeHint.classList.add('hidden'), { once: true });
 
 // ──────────────────────────────────────────────────────────────────
+//  BUILD SOURCE BUTTONS DYNAMICALLY
+// ──────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────
+//  DROPDOWN HELPERS
+// ──────────────────────────────────────────────────────────────────
+function toggleDropdown(which) {
+  const menu     = document.getElementById(which + '-dd-menu');
+  const selected = document.getElementById(which + '-dd-selected');
+  const isOpen   = menu.classList.contains('open');
+  closeAllDropdowns();
+  if (!isOpen) {
+    menu.classList.add('open');
+    selected.classList.add('open');
+  }
+}
+
+function closeAllDropdowns() {
+  ['sidebar', 'mobile'].forEach(which => {
+    document.getElementById(which + '-dd-menu')?.classList.remove('open');
+    document.getElementById(which + '-dd-selected')?.classList.remove('open');
+  });
+}
+
+function updateDropdownLabel(src) {
+  document.getElementById('sidebar-dd-label').textContent = src.label;
+  document.getElementById('mobile-dd-label').textContent  = src.label;
+  // Update active state in both menus
+  document.querySelectorAll('.dd-menu button').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.id) === src.id);
+  });
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.source-dropdown-wrap')) closeAllDropdowns();
+});
+
+function buildSourceButtons() {
+  ['sidebar', 'mobile'].forEach(which => {
+    const menu = document.getElementById(which + '-dd-menu');
+    menu.innerHTML = '';
+    SOURCES.forEach((src, i) => {
+      const btn = document.createElement('button');
+      btn.dataset.id = src.id;
+      btn.className  = i === 0 ? 'active' : '';
+      const icon  = src.type === 'api' ? '🌐' : '📋';
+      const badge = '<span class="dd-badge badge-' + src.type + '">' +
+                    (src.type === 'api' ? 'LIVE' : 'FILE') + '</span>';
+      btn.innerHTML = '<span>' + icon + ' ' + src.label + '</span>' + badge;
+      btn.onclick   = () => switchSource(src.id);
+      menu.appendChild(btn);
+    });
+  });
+}
+
+// ──────────────────────────────────────────────────────────────────
 //  INIT
 // ──────────────────────────────────────────────────────────────────
-loadSource(1);
+buildSourceButtons();
+loadSource(SOURCES[0].id);
 </script>
 </body>
 </html>
