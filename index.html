@@ -444,6 +444,104 @@ html, body {
 }
 @media (min-width: 769px) {
 }
+
+/* ── PAUSE GATE MODAL ───────────────────────────────────────────── */
+#pause-gate {
+  display: none;
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.82);
+  backdrop-filter: blur(8px);
+  align-items: center;
+  justify-content: center;
+}
+#pause-gate.visible { display: flex; animation: fadeInGate 0.35s ease; }
+@keyframes fadeInGate { from { opacity: 0; } to { opacity: 1; } }
+.gate-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #16161e;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 28px 28px 24px;
+  max-width: 420px;
+  width: calc(100vw - 40px);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(254,44,85,0.15);
+  animation: slideUpBox 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes slideUpBox {
+  from { transform: translateY(40px) scale(0.95); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+.gate-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 20px; right: 20px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 2px;
+}
+.gate-title { font-size: 1rem; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 4px; color: var(--text); }
+.gate-sub { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 18px; text-align: center; }
+.gate-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0a0a0f;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.gate-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.4s; }
+.gate-img-wrap img.loading { opacity: 0; }
+.gate-img-shimmer {
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.03) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+.gate-img-shimmer.hidden { opacity: 0; pointer-events: none; }
+.gate-countdown-wrap { position: absolute; bottom: 10px; right: 10px; width: 44px; height: 44px; }
+.gate-countdown-wrap svg { transform: rotate(-90deg); }
+.gate-countdown-wrap circle.track { fill: none; stroke: rgba(255,255,255,0.12); stroke-width: 3; }
+.gate-countdown-wrap circle.progress {
+  fill: none; stroke: var(--accent2); stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 113;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1s linear;
+}
+.gate-countdown-num {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 700; color: var(--accent2);
+}
+.gate-actions { display: flex; gap: 10px; width: 100%; }
+.gate-btn {
+  flex: 1; padding: 12px 0; border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 0.88rem; font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s, background 0.15s;
+}
+.gate-btn:active { transform: scale(0.97); }
+.gate-btn.continue {
+  background: linear-gradient(135deg, var(--accent), #c41e3e);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(254,44,85,0.35);
+}
+.gate-btn.continue:hover { box-shadow: 0 6px 28px rgba(254,44,85,0.55); }
+.gate-btn.refresh-img { background: transparent; border-color: var(--border); color: var(--text-muted); }
+.gate-btn.refresh-img:hover { background: var(--btn-bg); color: var(--text); }
+
 </style>
 </head>
 <body>
@@ -591,6 +689,10 @@ const state = {
   skipCount:    0,
   skipTimer:    null,
   stalledTimer: null,
+  // Pause-gate
+  videoCount:        0,
+  gateTimer:         null,
+  _countedThisLoad:  false,
 };
 
 function activeSource() {
@@ -687,6 +789,7 @@ function playCurrentVideo() {
     // Append timestamp so every call fetches a fresh random video
     const apiUrl = src.url + (src.url.includes('?') ? '&' : '?') + '_=' + Date.now();
     counter.textContent = src.label + ' — live';
+    state._countedThisLoad = false;
     showOverlay('Loading…');
     video.src  = apiUrl;
     video.loop = state.loop;
@@ -726,6 +829,7 @@ function playCurrentVideo() {
   const label = (state.index + 1) + ' / ' + state.videos.length +
                 (state.badUrls.size ? '  (' + state.badUrls.size + ' skipped)' : '');
   counter.textContent = label;
+  state._countedThisLoad = false;
   showOverlay('Loading…');
   video.src  = item.url;
   video.loop = state.loop;
@@ -785,6 +889,7 @@ function markBadAndSkip(reason) {
 }
 
 function nextVideo() {
+  if (checkPauseGate()) return;
   const src = activeSource();
   if (src.type === 'api') { playCurrentVideo(); return; } // fresh API call = new random video
   if (!state.videos.length) return;
@@ -834,6 +939,11 @@ video.addEventListener('canplay', () => {
 video.addEventListener('playing', () => {
   clearTimeout(state.stalledTimer);
   hideOverlay();
+  // Count each unique video that actually starts playing
+  if (!state._countedThisLoad) {
+    state._countedThisLoad = true;
+    state.videoCount++;
+  }
 });
 video.addEventListener('waiting', () => {
   clearTimeout(state.stalledTimer);
@@ -1027,10 +1137,232 @@ function buildSourceButtons() {
 }
 
 // ──────────────────────────────────────────────────────────────────
+//  PAUSE GATE (every 10 videos)
+// ──────────────────────────────────────────────────────────────────
+const GATE_EVERY   = 10;
+const GATE_TIMEOUT = 60;
+const PIC_API      = 'https://www.cunshao.com/666666/api/pic.php';
+const RING_CIRCUM  = 113;  // 2π × r18
+
+function checkPauseGate() {
+  if (state.videoCount > 0 && state.videoCount % GATE_EVERY === 0) {
+    showPauseGate();
+    return true;
+  }
+  return false;
+}
+
+function showPauseGate() {
+  video.pause();
+  document.getElementById('pause-gate').classList.add('visible');
+  gateLoadImage();
+  gateStartCountdown();
+}
+
+function hidePauseGate() {
+  document.getElementById('pause-gate').classList.remove('visible');
+  clearInterval(state.gateTimer);
+  state.gateTimer = null;
+}
+
+function gateContinue() {
+  hidePauseGate();
+  video.play().catch(() => {});
+}
+
+function gateRefreshImage() {
+  clearInterval(state.gateTimer);
+  gateLoadImage();
+  gateStartCountdown();
+}
+
+function gateLoadImage() {
+  const img     = document.getElementById('gate-img');
+  const shimmer = document.getElementById('gate-shimmer');
+  const url     = PIC_API + '?_=' + Date.now();
+  img.classList.add('loading');
+  shimmer.classList.remove('hidden');
+  const tmp   = new Image();
+  tmp.onload  = () => {
+    img.src = tmp.src;
+    img.classList.remove('loading');
+    shimmer.classList.add('hidden');
+  };
+  tmp.onerror = () => {
+    shimmer.classList.add('hidden');
+    img.classList.remove('loading');
+  };
+  tmp.src = url;
+}
+
+function gateStartCountdown() {
+  const ring  = document.getElementById('gate-ring');
+  const numEl = document.getElementById('gate-countdown');
+  let seconds = GATE_TIMEOUT;
+  ring.style.strokeDashoffset = '0';
+  numEl.textContent = seconds;
+
+  state.gateTimer = setInterval(() => {
+    seconds--;
+    numEl.textContent = seconds;
+    ring.style.strokeDashoffset = RING_CIRCUM * (1 - seconds / GATE_TIMEOUT);
+    if (seconds <= 0) {
+      clearInterval(state.gateTimer);
+      gateLoadImage();
+      gateStartCountdown();
+    }
+  }, 1000);
+}
+
+// ──────────────────────────────────────────────────────────────────
 //  INIT
 // ──────────────────────────────────────────────────────────────────
 buildSourceButtons();
 loadSource(SOURCES[0].id);
 </script>
+
+<!-- ── PAUSE GATE MODAL ──────────────────────────────────────── -->
+<div id="pause-gate">
+  <div class="gate-box">
+    <div class="gate-title">⏸ Taking a break?</div>
+    <div class="gate-sub">You've watched 10 videos — here's a sneak peek. Continue when ready.</div>
+    <div class="gate-img-wrap">
+      <img id="gate-img" src="" alt="Preview" class="loading">
+      <div class="gate-img-shimmer" id="gate-shimmer"></div>
+      <div class="gate-countdown-wrap">
+        <svg width="44" height="44" viewBox="0 0 44 44">
+          <circle class="track"    cx="22" cy="22" r="18"/>
+          <circle class="progress" cx="22" cy="22" r="18" id="gate-ring"/>
+        </svg>
+        <div class="gate-countdown-num" id="gate-countdown">60</div>
+      </div>
+    </div>
+    <div class="gate-actions">
+      <button class="gate-btn refresh-img" onclick="gateRefreshImage()">↺ New Image</button>
+      <button class="gate-btn continue"    onclick="gateContinue()">▶ Continue Playing</button>
+    </div>
+  </div>
+</div>
+
+<script async src="https://ackee.itprosec.com/Yds1jiaxr4VTgb2u7lpc9B8OZWF6350k.js" data-ackee-server="https://ackee.itprosec.com" data-ackee-domain-id="3fa9a76e-a504-4ec5-806e-0679cfc59300" data-ackee-opts='{ "detailed": true }'></script>
+<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ee4816c3be6499ca1921607cb43ebec"}'></script><!-- End Cloudflare Web Analytics -->
+<script async custom-element="amp-auto-ads" src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"> </script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5660349373091698"
+     crossorigin="anonymous"></script>
+
+<!-- Ezoic - sidebar_floating_1 - sidebar_floating_1 -->
+<div id="ezoic-pub-ad-placeholder-608"> </div>
+<!-- End Ezoic - sidebar_floating_1 - sidebar_floating_1 -->
+
+<!-- Ezoic - sidebar_middle - sidebar_middle -->
+<div id="ezoic-pub-ad-placeholder-143"> </div>
+<!-- End Ezoic - sidebar_middle - sidebar_middle -->
+
+  <!-- Ezoic - bottom_of_page 129 - bottom_of_page -->
+  <div id="ezoic-pub-ad-placeholder-129"> 
+   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5660349373091698"
+     crossorigin="anonymous">
+   </script>  
+  </div>
+  <!-- End Ezoic - bottom_of_page 129 - bottom_of_page -->
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3NWLMBWBZS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3NWLMBWBZS');
+</script>
+
+<amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-5660349373091698">
+</amp-auto-ads>
+<amp-ad width="100vw" height="320"
+     type="adsense"
+     data-ad-client="ca-pub-5660349373091698"
+     data-ad-slot="7912531145"
+     data-auto-format="rspv"
+     data-full-width="">
+  <div overflow=""></div>
+</amp-ad>
+
+<style>
+#adblock-overlay {
+  display: none; /* hidden by default */
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(255,255,255,0.95);
+  z-index: 9999;
+  text-align: center;
+  padding-top: 20%;
+  box-sizing: border-box;
+  font: bold 16px Verdana,Arial,sans-serif;
+}
+#adblock-overlay button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 14px;
+}
+</style>
+<div id="adblock-overlay">
+  Please disable your ad blocker to support us!<br>
+  <small>Visit blog.51sec.org, www.51sec.org for more.</small><br>
+  <button id="adblock-close-btn" disabled>20</button>
+</div>
+
+<script>
+(function(){
+  async function detectAdBlock() {
+    return new Promise(resolve=>{
+      const bait = document.createElement('div');
+      bait.className = 'ads ad-banner adunit';
+      bait.style.height='1px'; bait.style.position='absolute';
+      document.body.appendChild(bait);
+      setTimeout(()=>{
+        const blocked = getComputedStyle(bait).display=='none' || bait.offsetParent===null;
+        document.body.removeChild(bait);
+        resolve(blocked);
+      }, 100);
+    });
+  }
+
+  async function checkAndShowOverlay(){
+    const isBlocked = await detectAdBlock();
+    if(isBlocked){
+      showOverlay();
+    }
+  }
+
+  function showOverlay(){
+    const overlay = document.getElementById('adblock-overlay');
+    overlay.style.display='block';
+
+    const btn = document.getElementById('adblock-close-btn');
+    let countdown = 20;
+    btn.disabled = true;
+    btn.textContent = countdown;
+
+    const timer = setInterval(()=>{
+      countdown--;
+      btn.textContent = countdown;
+      if(countdown<=0){
+        clearInterval(timer);
+        btn.textContent = 'Close';
+        btn.disabled = false;
+      }
+    },1000);
+
+    btn.onclick = ()=>{
+      overlay.style.display='none';
+    }
+  }
+  // Run once at start
+  checkAndShowOverlay();
+  // Repeat every minute
+  setInterval(checkAndShowOverlay, 60000);
+})();
+</script>	
+   
 </body>
 </html>
