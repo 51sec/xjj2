@@ -572,8 +572,8 @@ body::before {
   #main-video { height: 100%; object-fit: cover; width: 100%; }
 }
 
-/* ── PAUSE GATE MODAL ───────────────────────────────────────────── */
-#pause-gate {
+/* ── PAUSE MODAL ─────────────────────────────────────────────────── */
+#pause-modal {
   display: none;
   position: fixed; inset: 0; z-index: 1000;
   background: rgba(4,4,12,0.88);
@@ -581,7 +581,7 @@ body::before {
   align-items: center;
   justify-content: center;
 }
-#pause-gate.visible { display: flex; animation: fadeInGate 0.3s ease; }
+#pause-modal.active { display: flex; animation: fadeInGate 0.3s ease; }
 @keyframes fadeInGate { from { opacity: 0; } to { opacity: 1; } }
 
 .gate-box {
@@ -593,7 +593,7 @@ body::before {
   border: 1px solid var(--border-2);
   border-radius: 20px;
   padding: 30px 28px 26px;
-  max-width: 420px;
+  max-width: 460px;
   width: calc(100vw - 40px);
   box-shadow:
     0 32px 80px rgba(0,0,0,0.7),
@@ -602,8 +602,6 @@ body::before {
   animation: slideUpBox 0.35s cubic-bezier(0.34,1.4,0.64,1);
   overflow: hidden;
 }
-
-/* Top accent bar */
 .gate-box::before {
   content: '';
   position: absolute;
@@ -611,8 +609,6 @@ body::before {
   height: 2px;
   background: linear-gradient(90deg, var(--accent), var(--accent2));
 }
-
-/* Subtle glow background */
 .gate-box::after {
   content: '';
   position: absolute;
@@ -622,12 +618,10 @@ body::before {
   background: radial-gradient(circle, rgba(255,77,109,0.1) 0%, transparent 70%);
   pointer-events: none;
 }
-
 @keyframes slideUpBox {
   from { transform: translateY(32px) scale(0.96); opacity: 0; }
   to   { transform: translateY(0) scale(1); opacity: 1; }
 }
-
 .gate-title {
   font-family: var(--font-display);
   font-size: 1.05rem;
@@ -652,55 +646,22 @@ body::before {
   border-radius: 14px;
   overflow: hidden;
   background: #0a0a14;
-  margin-bottom: 22px;
+  margin-bottom: 10px;
   border: 1px solid var(--border);
 }
 .gate-img-wrap img {
   width: 100%; height: 100%; object-fit: cover; display: block;
   transition: opacity 0.4s;
 }
-.gate-img-wrap img.loading { opacity: 0; }
-
-.gate-img-shimmer {
-  position: absolute; inset: 0;
-  background: linear-gradient(90deg,
-    rgba(255,255,255,0.02) 25%,
-    rgba(255,255,255,0.07) 50%,
-    rgba(255,255,255,0.02) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s infinite;
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
-@keyframes shimmer { to { background-position: -200% 0; } }
-.gate-img-shimmer.hidden { opacity: 0; pointer-events: none; }
-
-.gate-countdown-wrap {
-  position: absolute; bottom: 12px; right: 12px;
-  width: 44px; height: 44px;
-  background: rgba(8,8,16,0.7);
-  backdrop-filter: blur(8px);
-  border-radius: 50%;
-  border: 1px solid var(--border);
-}
-.gate-countdown-wrap svg { transform: rotate(-90deg); }
-.gate-countdown-wrap circle.track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 2.5; }
-.gate-countdown-wrap circle.progress {
-  fill: none; stroke: var(--accent2); stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-dasharray: 113;
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 1s linear;
-}
-.gate-countdown-num {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
+.gate-timer {
   font-family: var(--font-mono);
   font-size: 0.72rem;
-  font-weight: 500;
   color: var(--accent2);
+  margin-bottom: 18px;
+  letter-spacing: 0.4px;
+  position: relative; z-index: 1;
 }
-.gate-actions { display: flex; gap: 10px; width: 100%; }
+.gate-actions { display: flex; gap: 10px; width: 100%; margin-bottom: 20px; }
 .gate-btn {
   flex: 1; padding: 13px 0; border-radius: 12px;
   border: 1px solid transparent;
@@ -718,12 +679,47 @@ body::before {
   box-shadow: 0 4px 24px rgba(255,77,109,0.3);
 }
 .gate-btn.continue:hover { box-shadow: 0 6px 32px rgba(255,77,109,0.5); }
-.gate-btn.refresh-img {
+.gate-btn.stop {
   background: var(--btn-bg);
   border-color: var(--border);
   color: var(--text-muted);
 }
-.gate-btn.refresh-img:hover { background: var(--btn-hover); color: var(--text); border-color: var(--border-2); }
+.gate-btn.stop:hover { background: var(--btn-hover); color: var(--text); border-color: var(--border-2); }
+.gate-social {
+  width: 100%;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  position: relative; z-index: 1;
+}
+.gate-social-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-subtle);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.gate-social-icons {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+.gate-social-icons a {
+  display: inline-block;
+  transition: transform 0.2s;
+}
+.gate-social-icons a:hover { transform: scale(1.12); }
+.gate-social-icons img {
+  width: 40px; height: 40px;
+  border-radius: 8px;
+  opacity: 0.85;
+  transition: opacity 0.2s;
+}
+.gate-social-icons a:hover img { opacity: 1; }
+@media (max-width: 480px) {
+  .gate-actions { flex-direction: column; }
+}
 
 /* ── AD BLOCK OVERLAY ───────── */
 #adblock-overlay {
@@ -895,7 +891,7 @@ const SOURCES = [
   { id: 7, label: 'NRZJ TikTok',    type: 'api',                  url: 'http://v.nrzj.vip/tiktok/video.php'                 },
   { id: 8, label: 'NRZJ Video 2',   type: 'api',                  url: 'http://video.nrzj.vip/video.php'                    },
   { id: 9, label: 'NRZJ TikTok 2',  type: 'api',                  url: 'http://video.nrzj.vip/tiktok/video.php'             },
-  { id:10, label: 'PF129',          type: 'api-fetch',            url: 'https://netsec.alwaysdata.net/proxy.php?src=https%3A%2F%2Fpf129.com%2Fxjj%2Fget%2Fget1.php' },
+  { id:10, label: 'PF129',          type: 'api-fetch',            url: 'proxy.php?src=https%3A%2F%2Fpf129.com%2Fxjj%2Fget%2Fget1.php' },
 ];
 
 const state = {
@@ -909,7 +905,8 @@ const state = {
   skipTimer:    null,
   stalledTimer: null,
   videoCount:        0,
-  gateTimer:         null,
+  pauseTimer:        null,
+  pauseCountdown:    10,
   _countedThisLoad:  false,
 };
 
@@ -1146,7 +1143,12 @@ video.addEventListener('error',    () => {
   const msgs = { 1:'Aborted', 2:'Network error', 3:'Decode error', 4:'Not supported' };
   markBadAndSkip(msgs[code] || ('Error ' + code));
 });
-video.addEventListener('ended',    () => { if (state.autoNext && !state.loop) nextVideo(); });
+video.addEventListener('ended', () => {
+  if (!state.loop) {
+    if (checkPauseGate()) return;  // show gate if threshold reached
+    if (state.autoNext) nextVideo();
+  }
+});
 video.addEventListener('dblclick', toggleFullscreen);
 
 function switchSource(id) { closeAllDropdowns(); loadSource(id); }
@@ -1260,77 +1262,86 @@ function buildSourceButtons() {
   });
 }
 
-// ── PAUSE GATE ──────────────────────────────────────────────
-const GATE_EVERY   = 10;
-const GATE_TIMEOUT = 60;
-const PIC_API      = 'https://www.cunshao.com/666666/api/pic.php';
-const RING_CIRCUM  = 113;
+// ── PAUSE MODAL (ported from mm) ────────────────────────────────
+const GATE_EVERY = 10;
+const PIC_API    = 'https://www.cunshao.com/666666/api/pic.php';
 
 function checkPauseGate() {
-  if (state.videoCount > 0 && state.videoCount % GATE_EVERY === 0) { showPauseGate(); return true; }
+  if (state.videoCount >= GATE_EVERY) {
+    showPauseModal();
+    return true;
+  }
   return false;
 }
-function showPauseGate() {
+
+function showPauseModal() {
   video.pause();
-  document.getElementById('pause-gate').classList.add('visible');
-  gateLoadImage();
-  gateStartCountdown();
-}
-function hidePauseGate() {
-  document.getElementById('pause-gate').classList.remove('visible');
-  clearInterval(state.gateTimer);
-  state.gateTimer = null;
-}
-function gateContinue() { hidePauseGate(); video.play().catch(() => {}); }
-function gateRefreshImage() { clearInterval(state.gateTimer); gateLoadImage(); gateStartCountdown(); }
-function gateLoadImage() {
-  const img     = document.getElementById('gate-img');
-  const shimmer = document.getElementById('gate-shimmer');
-  const url     = PIC_API + '?_=' + Date.now();
-  img.classList.add('loading');
-  shimmer.classList.remove('hidden');
-  const tmp   = new Image();
-  tmp.onload  = () => { img.src = tmp.src; img.classList.remove('loading'); shimmer.classList.add('hidden'); };
-  tmp.onerror = () => { shimmer.classList.add('hidden'); img.classList.remove('loading'); };
-  tmp.src = url;
-}
-function gateStartCountdown() {
-  const ring  = document.getElementById('gate-ring');
-  const numEl = document.getElementById('gate-countdown');
-  let seconds = GATE_TIMEOUT;
-  ring.style.strokeDashoffset = '0';
-  numEl.textContent = seconds;
-  state.gateTimer = setInterval(() => {
-    seconds--;
-    numEl.textContent = seconds;
-    ring.style.strokeDashoffset = RING_CIRCUM * (1 - seconds / GATE_TIMEOUT);
-    if (seconds <= 0) { clearInterval(state.gateTimer); gateLoadImage(); gateStartCountdown(); }
+  document.getElementById('pause-modal').classList.add('active');
+  // Load fresh image
+  document.getElementById('gate-img').src = PIC_API + '?' + Date.now();
+  // Start 10-second countdown that refreshes image on each cycle
+  state.pauseCountdown = 10;
+  document.getElementById('gate-timer').textContent = 'New image in ' + state.pauseCountdown + 's';
+  state.pauseTimer = setInterval(() => {
+    state.pauseCountdown--;
+    document.getElementById('gate-timer').textContent = 'New image in ' + state.pauseCountdown + 's';
+    if (state.pauseCountdown <= 0) {
+      document.getElementById('gate-img').src = PIC_API + '?' + Date.now();
+      state.pauseCountdown = 10;
+    }
   }, 1000);
+}
+
+function hidePauseModal() {
+  document.getElementById('pause-modal').classList.remove('active');
+  if (state.pauseTimer) { clearInterval(state.pauseTimer); state.pauseTimer = null; }
+}
+
+function gateContinue() {
+  hidePauseModal();
+  state.videoCount = 0;  // reset so gate fires again after 10 more videos
+  nextVideo();
+}
+
+function gateStop() {
+  hidePauseModal();
+  state.videoCount = 0;
+  video.pause();
 }
 
 buildSourceButtons();
 loadSource(SOURCES[0].id);
 </script>
 
-<!-- ── PAUSE GATE MODAL ──────────────────────────────────────── -->
-<div id="pause-gate">
+<!-- ── PAUSE MODAL ───────────────────────────────────────────── -->
+<div id="pause-modal">
   <div class="gate-box">
-    <div class="gate-title">⏸ Taking a break?</div>
-    <div class="gate-sub">You've watched 10 videos — here's a sneak peek.<br>Continue when you're ready.</div>
+    <div class="gate-title">🎬 Take a Break!</div>
+    <div class="gate-sub">You've watched 10 videos. Would you like to continue?</div>
     <div class="gate-img-wrap">
-      <img id="gate-img" src="" alt="Preview" class="loading">
-      <div class="gate-img-shimmer" id="gate-shimmer"></div>
-      <div class="gate-countdown-wrap">
-        <svg width="44" height="44" viewBox="0 0 44 44">
-          <circle class="track"    cx="22" cy="22" r="18"/>
-          <circle class="progress" cx="22" cy="22" r="18" id="gate-ring"/>
-        </svg>
-        <div class="gate-countdown-num" id="gate-countdown">60</div>
-      </div>
+      <img id="gate-img" src="" alt="Preview">
     </div>
+    <div class="gate-timer" id="gate-timer">New image in 10s</div>
     <div class="gate-actions">
-      <button class="gate-btn refresh-img" onclick="gateRefreshImage()">↺ New Image</button>
-      <button class="gate-btn continue"    onclick="gateContinue()">▶ Continue</button>
+      <button class="gate-btn stop"     onclick="gateStop()">❌ Stop</button>
+      <button class="gate-btn continue" onclick="gateContinue()">✅ Continue</button>
+    </div>
+    <div class="gate-social">
+      <div class="gate-social-label">Follow us</div>
+      <div class="gate-social-icons">
+        <a href="https://www.youtube.com/c/NetSec" target="_blank" title="51sec YouTube">
+          <img src="https://i.51sec.org/2025/Logo-illustrator-YouTube-PNG.png" alt="YouTube">
+        </a>
+        <a href="https://sites.51sec.org" target="_blank" title="51sec Sites">
+          <img src="https://photos.51sec.org/file/test1-51sec/2021/10/sites%20-%20round%20-500.png" alt="Sites">
+        </a>
+        <a href="https://nav.51sec.org" target="_blank" title="51sec Navigation">
+          <img src="https://photos.51sec.org/file/test1-51sec/2021/10/Black%2C%20White%20and%20Yellow%20Lightning%20-%20Round%20corner-350.png" alt="Navigation">
+        </a>
+        <a href="https://od.51sec.org" target="_blank" title="51sec OneDrive">
+          <img src="https://photos.51sec.org/file/test1-51sec/2021/10/OneDrive%20OD%2051sec-roundcorner%20-%20Copy.png" alt="OneDrive">
+        </a>
+      </div>
     </div>
   </div>
 </div>
