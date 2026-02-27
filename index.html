@@ -4,60 +4,81 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>XJJ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* =====================================================================
-   XJJ – Single File Video Player
-   Source 1 → get/videos.txt  (one video URL per line)
-   Source 2 → get/videos.json (array of objects: [{url:"…",title:"…"},...])
-   Source 3 - 7  → get url from online php api
+   XJJ – Redesigned Video Player
    ===================================================================== */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:          #0d0d0d;
-  --surface:     #1a1a1a;
-  --border:      #2e2e2e;
-  --accent:      #fe2c55;
-  --accent2:     #25f4ee;
-  --text:        #ffffff;
-  --text-muted:  #888888;
-  --btn-bg:      rgba(255,255,255,0.12);
-  --btn-hover:   rgba(255,255,255,0.22);
-  --radius:      10px;
-  --sidebar-w:   220px;
+  --bg:          #080810;
+  --surface:     #0e0e1a;
+  --surface-2:   #141424;
+  --border:      rgba(255,255,255,0.07);
+  --border-2:    rgba(255,255,255,0.12);
+  --accent:      #ff4d6d;
+  --accent-dim:  rgba(255,77,109,0.15);
+  --accent2:     #00e5c8;
+  --accent2-dim: rgba(0,229,200,0.12);
+  --text:        #f0eeff;
+  --text-muted:  rgba(240,238,255,0.42);
+  --text-subtle: rgba(240,238,255,0.22);
+  --btn-bg:      rgba(255,255,255,0.06);
+  --btn-hover:   rgba(255,255,255,0.11);
+  --radius:      12px;
+  --sidebar-w:   230px;
+  --font-display: 'Syne', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+  --font-mono:    'DM Mono', monospace;
 }
 
 html, body {
   width: 100%; height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-body);
   overflow: hidden;
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* Noise texture overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 160px;
+  pointer-events: none;
+  opacity: 0.5;
 }
 
 /* ── TOP NAV (Mobile only) ─────────────────────────────────── */
 #topbar {
   display: none;
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  height: 52px;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.75), transparent);
+  height: 56px;
+  background: linear-gradient(to bottom, rgba(8,8,16,0.92) 0%, transparent 100%);
+  backdrop-filter: blur(0px);
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 20px;
 }
 #topbar .logo-text {
-  font-size: 1.4rem;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
   font-weight: 800;
-  letter-spacing: 2px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  letter-spacing: 4px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-/* ── SOURCE DROPDOWN (shared) ───────────────────────────────────── */
+
+/* ── SOURCE DROPDOWN ───────────────────────────────────────── */
 .source-dropdown-wrap {
   position: relative;
 }
@@ -65,88 +86,101 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
   background: var(--btn-bg);
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 8px 12px;
+  padding: 9px 14px;
   border-radius: var(--radius);
-  font-size: 0.82rem;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.2s, border-color 0.2s;
   user-select: none;
   white-space: nowrap;
+  letter-spacing: 0.3px;
 }
 .source-dropdown-wrap .dd-selected:hover {
   background: var(--btn-hover);
+  border-color: var(--border-2);
 }
 .source-dropdown-wrap .dd-selected.open {
   border-color: var(--accent);
-  background: rgba(254,44,85,0.12);
+  background: var(--accent-dim);
 }
 .source-dropdown-wrap .dd-arrow {
-  font-size: 0.65rem;
+  font-size: 0.58rem;
   transition: transform 0.2s;
-  opacity: 0.7;
+  opacity: 0.5;
 }
 .source-dropdown-wrap .dd-selected.open .dd-arrow {
   transform: rotate(180deg);
+  opacity: 0.9;
 }
 .source-dropdown-wrap .dd-menu {
   display: none;
   position: absolute;
   left: 0;
-  background: #1e1e26;
-  border: 1px solid var(--border);
+  background: #12121f;
+  border: 1px solid var(--border-2);
   border-radius: var(--radius);
   overflow: hidden;
   z-index: 500;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
   min-width: 100%;
   white-space: nowrap;
 }
-.source-dropdown-wrap .dd-menu.open { display: block; }
-/* Sidebar dropdown opens downward */
-#sidebar .dd-menu { top: calc(100% + 4px); }
-/* Mobile topbar dropdown opens downward */
-#topbar .dd-menu  { top: calc(100% + 4px); }
+.source-dropdown-wrap .dd-menu.open { display: block; animation: ddSlideIn 0.16s ease; }
+@keyframes ddSlideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#sidebar .dd-menu { top: calc(100% + 5px); }
+#topbar .dd-menu  { top: calc(100% + 5px); }
 .source-dropdown-wrap .dd-menu button {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
   background: transparent;
   border: none;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  color: var(--text);
-  padding: 10px 14px;
-  font-size: 0.82rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--text-muted);
+  padding: 11px 15px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
   cursor: pointer;
   text-align: left;
-  transition: background 0.12s;
+  transition: background 0.12s, color 0.12s;
 }
 .source-dropdown-wrap .dd-menu button:last-child { border-bottom: none; }
-.source-dropdown-wrap .dd-menu button:hover { background: var(--btn-bg); }
+.source-dropdown-wrap .dd-menu button:hover {
+  background: var(--btn-bg);
+  color: var(--text);
+}
 .source-dropdown-wrap .dd-menu button.active {
-  background: rgba(254,44,85,0.15);
+  background: var(--accent-dim);
   color: var(--accent);
-  font-weight: 700;
+  font-weight: 600;
 }
 .source-dropdown-wrap .dd-menu .dd-badge {
-  font-size: 0.6rem;
-  padding: 1px 6px;
-  border-radius: 10px;
+  font-size: 0.55rem;
+  padding: 2px 7px;
+  border-radius: 20px;
   font-weight: 700;
   margin-left: auto;
+  letter-spacing: 0.5px;
+  font-family: var(--font-mono);
 }
-.dd-badge.badge-list { background: rgba(37,244,238,0.15); color: var(--accent2); }
-.dd-badge.badge-api  { background: rgba(254,44,85,0.15);  color: var(--accent);  }
+.dd-badge.badge-list { background: var(--accent2-dim); color: var(--accent2); }
+.dd-badge.badge-api  { background: var(--accent-dim); color: var(--accent); }
 
 /* ── APP SHELL ─────────────────────────────────────────────── */
 #app {
   display: flex;
   width: 100%; height: 100%;
+  position: relative; z-index: 1;
 }
 
 /* ── PC SIDEBAR ────────────────────────────────────────────── */
@@ -157,57 +191,84 @@ html, body {
   min-width: var(--sidebar-w);
   background: var(--surface);
   border-right: 1px solid var(--border);
-  padding: 24px 16px 20px;
-  gap: 4px;
+  padding: 28px 18px 22px;
+  gap: 2px;
   z-index: 10;
+  position: relative;
 }
+
+/* Sidebar subtle gradient top edge */
+#sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+  opacity: 0.6;
+}
+
 .sidebar-logo {
-  font-size: 1.7rem;
-  font-weight: 900;
-  letter-spacing: 3px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: 5px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 22px;
+  margin-bottom: 26px;
   text-align: center;
+  position: relative;
 }
+.sidebar-logo::after {
+  content: '';
+  display: block;
+  width: 32px; height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 2px;
+  margin: 6px auto 0;
+  opacity: 0.5;
+}
+
 .sidebar-section-label {
-  font-size: 0.63rem;
-  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--text-muted);
-  margin: 12px 0 4px 4px;
+  letter-spacing: 2px;
+  color: var(--text-subtle);
+  margin: 14px 0 6px 2px;
 }
+
 .sidebar-btn {
   display: flex;
   align-items: center;
   gap: 10px;
   background: transparent;
   border: 1px solid transparent;
-  color: var(--text);
+  color: var(--text-muted);
   padding: 10px 12px;
   border-radius: var(--radius);
-  font-size: 0.83rem;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
   text-align: left;
   width: 100%;
 }
-.sidebar-btn:hover { background: var(--btn-bg); }
+.sidebar-btn:hover { background: var(--btn-bg); color: var(--text); }
 .sidebar-btn.active {
-  background: rgba(254,44,85,0.15);
-  border-color: var(--accent);
+  background: var(--accent-dim);
+  border-color: rgba(255,77,109,0.3);
   color: var(--accent);
 }
-.btn-icon { font-size: 1rem; }
+.btn-icon { font-size: 0.95rem; opacity: 0.8; }
 
 .sidebar-divider {
   border: none;
   border-top: 1px solid var(--border);
-  margin: 8px 0;
+  margin: 10px 0;
 }
 
 /* Toggle controls */
@@ -215,67 +276,83 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 4px;
+  padding: 9px 4px;
 }
-.toggle-row span { font-size: 0.82rem; }
-.toggle { position: relative; width: 40px; height: 22px; }
+.toggle-row span {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.toggle { position: relative; width: 38px; height: 20px; }
 .toggle input { opacity: 0; width: 0; height: 0; }
 .toggle-slider {
   position: absolute; inset: 0;
-  background: var(--border);
+  background: rgba(255,255,255,0.1);
   border-radius: 20px;
   cursor: pointer;
   transition: background 0.25s;
+  border: 1px solid var(--border);
 }
 .toggle-slider::before {
   content: '';
   position: absolute;
-  left: 3px; top: 3px;
-  width: 16px; height: 16px;
-  background: #fff;
+  left: 2px; top: 2px;
+  width: 14px; height: 14px;
+  background: var(--text-muted);
   border-radius: 50%;
-  transition: transform 0.25s;
+  transition: transform 0.25s, background 0.25s;
 }
-.toggle input:checked + .toggle-slider { background: var(--accent); }
-.toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+.toggle input:checked + .toggle-slider { background: var(--accent-dim); border-color: var(--accent); }
+.toggle input:checked + .toggle-slider::before {
+  transform: translateX(18px);
+  background: var(--accent);
+}
 
 /* Nav buttons */
 .nav-btn-group {
-  display: flex; flex-direction: column; gap: 6px;
-  margin-top: 8px;
+  display: flex; flex-direction: column; gap: 8px;
+  margin-top: 6px;
 }
 .nav-arrow-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   background: var(--btn-bg);
   border: 1px solid var(--border);
-  color: var(--text);
-  padding: 10px;
+  color: var(--text-muted);
+  padding: 11px;
   border-radius: var(--radius);
-  font-size: 0.82rem;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
   width: 100%;
+  letter-spacing: 0.3px;
 }
-.nav-arrow-btn:hover { background: var(--btn-hover); }
+.nav-arrow-btn:hover { background: var(--btn-hover); color: var(--text); border-color: var(--border-2); }
+.nav-arrow-btn:active { transform: scale(0.97); }
 .pass-btn {
-  background: linear-gradient(135deg, var(--accent), #c41e3e) !important;
-  border-color: transparent !important;
-  font-size: 0.9rem;
-  padding: 12px !important;
+  background: linear-gradient(135deg, rgba(255,77,109,0.2), rgba(255,77,109,0.08)) !important;
+  border: 1px solid rgba(255,77,109,0.35) !important;
+  color: var(--accent) !important;
+}
+.pass-btn:hover {
+  background: linear-gradient(135deg, rgba(255,77,109,0.3), rgba(255,77,109,0.15)) !important;
+  box-shadow: 0 4px 20px rgba(255,77,109,0.2);
 }
 
-/* ── SIDEBAR COPYRIGHT SECTION ─────────────────────────────────── */
+/* Sidebar copyright */
 .sidebar-copyright {
   margin-top: auto;
-  padding-top: 12px;
+  padding-top: 14px;
   border-top: 1px solid var(--border);
 }
 .copyright-text {
-  font-size: 0.65rem;
-  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-subtle);
   text-align: center;
-  line-height: 1.6;
+  line-height: 1.7;
+  letter-spacing: 0.5px;
 }
 
 /* ── VIDEO AREA ─────────────────────────────────────────────── */
@@ -310,22 +387,42 @@ html, body {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  background: rgba(0,0,0,0.75);
+  background: rgba(8,8,16,0.82);
+  backdrop-filter: blur(2px);
   z-index: 5;
-  gap: 14px;
+  gap: 16px;
 }
 #overlay.hidden { display: none; }
+
+/* Custom spinner */
 .spinner {
-  width: 44px; height: 44px;
-  border: 3px solid var(--border);
-  border-top-color: var(--accent);
+  width: 40px; height: 40px;
+  position: relative;
+}
+.spinner::before, .spinner::after {
+  content: '';
+  position: absolute; inset: 0;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  border: 2px solid transparent;
+}
+.spinner::before {
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+.spinner::after {
+  border-bottom-color: var(--accent2);
+  animation: spin 0.9s linear infinite reverse;
+  inset: 6px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-#overlay-msg { font-size: 0.9rem; color: var(--text-muted); }
+#overlay-msg {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
 
-/* Play/pause icon flash */
+/* Play/pause flash */
 #play-flash {
   position: absolute;
   left: 50%; top: 50%;
@@ -334,29 +431,32 @@ html, body {
   opacity: 0;
   pointer-events: none;
   z-index: 10;
-  text-shadow: 0 0 20px rgba(0,0,0,0.6);
+  filter: drop-shadow(0 0 20px rgba(255,77,109,0.5));
 }
 #play-flash.show {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
   animation: flashOut 0.5s ease forwards 0.15s;
 }
-@keyframes flashOut { to { opacity: 0; transform: translate(-50%,-50%) scale(1.3); } }
+@keyframes flashOut { to { opacity: 0; transform: translate(-50%,-50%) scale(1.4); } }
 
 /* Swipe hint */
 #swipe-hint {
   position: absolute;
-  bottom: 72px; left: 50%;
+  bottom: 80px; left: 50%;
   transform: translateX(-50%);
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(4px);
-  padding: 8px 18px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  color: rgba(255,255,255,0.7);
+  background: rgba(14,14,26,0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  padding: 9px 20px;
+  border-radius: 24px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
   pointer-events: none;
   z-index: 20;
   transition: opacity 1s;
+  letter-spacing: 0.3px;
 }
 #swipe-hint.hidden { opacity: 0; }
 
@@ -364,8 +464,8 @@ html, body {
 #mobile-controls {
   display: none;
   position: absolute; bottom: 0; left: 0; right: 0; z-index: 50;
-  background: linear-gradient(transparent, rgba(0,0,0,0.82));
-  padding: 40px 16px 18px;
+  background: linear-gradient(transparent, rgba(8,8,16,0.92));
+  padding: 48px 18px 22px;
   flex-direction: column;
   gap: 10px;
 }
@@ -375,56 +475,70 @@ html, body {
   justify-content: center;
 }
 .mobile-btn {
-  background: var(--btn-bg);
-  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(14,14,26,0.8);
+  border: 1px solid var(--border-2);
   color: var(--text);
-  padding: 9px 18px;
-  border-radius: 20px;
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-family: var(--font-body);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
-  backdrop-filter: blur(6px);
+  transition: background 0.15s, transform 0.1s;
+  backdrop-filter: blur(12px);
+  letter-spacing: 0.3px;
 }
 .mobile-btn:hover { background: var(--btn-hover); }
-.mobile-btn.btn-active { background: var(--accent); border-color: var(--accent); }
-.mobile-btn.pass { background: var(--accent); border-color: var(--accent); }
-
-/* ── RIGHT INFO PANEL (PC) ──────────────────────────────────── */
-
-/* source dropdowns handled by .source-dropdown-wrap above */
+.mobile-btn:active { transform: scale(0.95); }
+.mobile-btn.btn-active {
+  background: var(--accent-dim);
+  border-color: rgba(255,77,109,0.4);
+  color: var(--accent);
+}
+.mobile-btn.pass {
+  background: linear-gradient(135deg, rgba(255,77,109,0.25), rgba(255,77,109,0.1));
+  border-color: rgba(255,77,109,0.4);
+  color: var(--accent);
+}
 
 /* Video counter */
 #video-counter {
   position: absolute;
-  top: 14px; right: 14px;
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(4px);
-  padding: 4px 12px;
+  top: 16px; right: 16px;
+  background: rgba(8,8,16,0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  padding: 5px 14px;
   border-radius: 20px;
-  font-size: 0.72rem;
-  color: rgba(255,255,255,0.7);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
   z-index: 20;
   pointer-events: none;
+  letter-spacing: 0.5px;
 }
 
 /* Toast */
 #toast {
   position: fixed;
-  bottom: 30px; left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background: rgba(25,25,25,0.95);
-  border: 1px solid var(--border);
+  bottom: 32px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: rgba(14,14,26,0.95);
+  border: 1px solid var(--border-2);
   color: var(--text);
-  padding: 10px 22px;
-  border-radius: 24px;
-  font-size: 0.82rem;
+  padding: 10px 24px;
+  border-radius: 28px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
   pointer-events: none;
   opacity: 0;
   z-index: 200;
   transition: opacity 0.3s, transform 0.3s;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(16px);
   white-space: nowrap;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  letter-spacing: 0.2px;
 }
 #toast.show {
   opacity: 1;
@@ -434,16 +548,19 @@ html, body {
 /* Keyboard shortcuts panel */
 #shortcuts {
   position: absolute;
-  bottom: 14px; left: 14px;
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(4px);
-  padding: 8px 12px;
+  bottom: 16px; left: 16px;
+  background: rgba(8,8,16,0.55);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
   border-radius: var(--radius);
-  font-size: 0.68rem;
-  color: rgba(255,255,255,0.5);
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  color: var(--text-subtle);
   pointer-events: none;
   z-index: 20;
-  line-height: 1.8;
+  line-height: 2;
+  letter-spacing: 0.3px;
 }
 
 /* ── RESPONSIVE ─────────────────────────────────────────────── */
@@ -454,80 +571,122 @@ html, body {
   #shortcuts  { display: none; }
   #main-video { height: 100%; object-fit: cover; width: 100%; }
 }
-@media (min-width: 769px) and (max-width: 1100px) {
-}
-@media (min-width: 769px) {
-}
 
 /* ── PAUSE GATE MODAL ───────────────────────────────────────────── */
 #pause-gate {
   display: none;
   position: fixed; inset: 0; z-index: 1000;
-  background: rgba(0,0,0,0.82);
-  backdrop-filter: blur(8px);
+  background: rgba(4,4,12,0.88);
+  backdrop-filter: blur(16px);
   align-items: center;
   justify-content: center;
 }
-#pause-gate.visible { display: flex; animation: fadeInGate 0.35s ease; }
+#pause-gate.visible { display: flex; animation: fadeInGate 0.3s ease; }
 @keyframes fadeInGate { from { opacity: 0; } to { opacity: 1; } }
+
 .gate-box {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #16161e;
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--surface);
+  border: 1px solid var(--border-2);
   border-radius: 20px;
-  padding: 28px 28px 24px;
+  padding: 30px 28px 26px;
   max-width: 420px;
   width: calc(100vw - 40px);
-  box-shadow: 0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(254,44,85,0.15);
-  animation: slideUpBox 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow:
+    0 32px 80px rgba(0,0,0,0.7),
+    0 0 0 1px rgba(255,77,109,0.12),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+  animation: slideUpBox 0.35s cubic-bezier(0.34,1.4,0.64,1);
+  overflow: hidden;
 }
-@keyframes slideUpBox {
-  from { transform: translateY(40px) scale(0.95); opacity: 0; }
-  to   { transform: translateY(0) scale(1); opacity: 1; }
-}
+
+/* Top accent bar */
 .gate-box::before {
   content: '';
   position: absolute;
-  top: 0; left: 20px; right: 20px;
+  top: 0; left: 0; right: 0;
   height: 2px;
   background: linear-gradient(90deg, var(--accent), var(--accent2));
-  border-radius: 2px;
 }
-.gate-title { font-size: 1rem; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 4px; color: var(--text); }
-.gate-sub { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 18px; text-align: center; }
+
+/* Subtle glow background */
+.gate-box::after {
+  content: '';
+  position: absolute;
+  top: -60px; left: 50%;
+  transform: translateX(-50%);
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(255,77,109,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+@keyframes slideUpBox {
+  from { transform: translateY(32px) scale(0.96); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.gate-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  color: var(--text);
+  position: relative; z-index: 1;
+}
+.gate-sub {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  text-align: center;
+  line-height: 1.5;
+  position: relative; z-index: 1;
+}
 .gate-img-wrap {
   position: relative;
   width: 100%;
   aspect-ratio: 16/9;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
-  background: #0a0a0f;
-  margin-bottom: 20px;
-  border: 1px solid rgba(255,255,255,0.08);
+  background: #0a0a14;
+  margin-bottom: 22px;
+  border: 1px solid var(--border);
 }
-.gate-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.4s; }
+.gate-img-wrap img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: opacity 0.4s;
+}
 .gate-img-wrap img.loading { opacity: 0; }
+
 .gate-img-shimmer {
   position: absolute; inset: 0;
   background: linear-gradient(90deg,
-    rgba(255,255,255,0.03) 25%,
-    rgba(255,255,255,0.08) 50%,
-    rgba(255,255,255,0.03) 75%);
+    rgba(255,255,255,0.02) 25%,
+    rgba(255,255,255,0.07) 50%,
+    rgba(255,255,255,0.02) 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.2s infinite;
+  animation: shimmer 1.4s infinite;
   pointer-events: none;
   transition: opacity 0.3s;
 }
 @keyframes shimmer { to { background-position: -200% 0; } }
 .gate-img-shimmer.hidden { opacity: 0; pointer-events: none; }
-.gate-countdown-wrap { position: absolute; bottom: 10px; right: 10px; width: 44px; height: 44px; }
+
+.gate-countdown-wrap {
+  position: absolute; bottom: 12px; right: 12px;
+  width: 44px; height: 44px;
+  background: rgba(8,8,16,0.7);
+  backdrop-filter: blur(8px);
+  border-radius: 50%;
+  border: 1px solid var(--border);
+}
 .gate-countdown-wrap svg { transform: rotate(-90deg); }
-.gate-countdown-wrap circle.track { fill: none; stroke: rgba(255,255,255,0.12); stroke-width: 3; }
+.gate-countdown-wrap circle.track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 2.5; }
 .gate-countdown-wrap circle.progress {
-  fill: none; stroke: var(--accent2); stroke-width: 3;
+  fill: none; stroke: var(--accent2); stroke-width: 2.5;
   stroke-linecap: round;
   stroke-dasharray: 113;
   stroke-dashoffset: 0;
@@ -536,25 +695,79 @@ html, body {
 .gate-countdown-num {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  font-size: 0.75rem; font-weight: 700; color: var(--accent2);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--accent2);
 }
 .gate-actions { display: flex; gap: 10px; width: 100%; }
 .gate-btn {
-  flex: 1; padding: 12px 0; border-radius: 10px;
+  flex: 1; padding: 13px 0; border-radius: 12px;
   border: 1px solid transparent;
-  font-size: 0.88rem; font-weight: 700;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: transform 0.12s, box-shadow 0.12s, background 0.15s;
+  transition: transform 0.1s, box-shadow 0.15s, background 0.15s;
+  letter-spacing: 0.2px;
 }
 .gate-btn:active { transform: scale(0.97); }
 .gate-btn.continue {
-  background: linear-gradient(135deg, var(--accent), #c41e3e);
+  background: linear-gradient(135deg, var(--accent), #d63850);
   color: #fff;
-  box-shadow: 0 4px 20px rgba(254,44,85,0.35);
+  box-shadow: 0 4px 24px rgba(255,77,109,0.3);
 }
-.gate-btn.continue:hover { box-shadow: 0 6px 28px rgba(254,44,85,0.55); }
-.gate-btn.refresh-img { background: transparent; border-color: var(--border); color: var(--text-muted); }
-.gate-btn.refresh-img:hover { background: var(--btn-bg); color: var(--text); }
+.gate-btn.continue:hover { box-shadow: 0 6px 32px rgba(255,77,109,0.5); }
+.gate-btn.refresh-img {
+  background: var(--btn-bg);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+.gate-btn.refresh-img:hover { background: var(--btn-hover); color: var(--text); border-color: var(--border-2); }
+
+/* ── AD BLOCK OVERLAY ───────── */
+#adblock-overlay {
+  display: none;
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(8,8,16,0.97);
+  z-index: 9999;
+  text-align: center;
+  padding-top: 18%;
+  box-sizing: border-box;
+  font-family: var(--font-body);
+  color: var(--text);
+  backdrop-filter: blur(20px);
+}
+#adblock-overlay p {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+#adblock-overlay small {
+  font-size: 0.78rem;
+  color: var(--text-subtle);
+}
+#adblock-close-btn {
+  margin-top: 24px;
+  padding: 11px 28px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--accent-dim);
+  border: 1px solid rgba(255,77,109,0.4);
+  color: var(--accent);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+#adblock-close-btn:not(:disabled):hover {
+  background: rgba(255,77,109,0.25);
+}
 
 </style>
 </head>
@@ -590,7 +803,7 @@ html, body {
 
     <hr class="sidebar-divider">
 
-    <div class="sidebar-section-label">Options</div>
+    <div class="sidebar-section-label">Playback</div>
     <div class="toggle-row">
       <span>Auto Next</span>
       <label class="toggle">
@@ -609,13 +822,12 @@ html, body {
     <hr class="sidebar-divider">
     <div class="sidebar-section-label">Navigate</div>
     <div class="nav-btn-group">
-      <button class="nav-arrow-btn" onclick="prevVideo()">⬆&nbsp; Previous</button>
-      <button class="nav-arrow-btn pass-btn" onclick="nextVideo()">⬇&nbsp; PASS / Next</button>
+      <button class="nav-arrow-btn" onclick="prevVideo()">↑&nbsp;&nbsp;Previous</button>
+      <button class="nav-arrow-btn pass-btn" onclick="nextVideo()">↓&nbsp;&nbsp;Next / Pass</button>
     </div>
 
     <div class="sidebar-copyright">
-      <div class="copyright-text">© 51SEC<br>2026</div>
-      <!-- Google AdSense side ads placeholder -->
+      <div class="copyright-text">© 51SEC · 2026</div>
       <div id="sidebar-ad-space" style="margin-top: 12px;"></div>
     </div>
   </nav>
@@ -643,13 +855,12 @@ html, body {
 
     <!-- Keyboard shortcuts hint (PC) -->
     <div id="shortcuts">
-      Space: Play/Pause &nbsp;·&nbsp; ↑/↓: Prev/Next<br>
-      1/2: Switch Source &nbsp;·&nbsp; A: Auto &nbsp;·&nbsp; L: Loop<br>
-      F: Fullscreen &nbsp;·&nbsp; Dbl-click: Fullscreen
+      Space: Play/Pause &nbsp;·&nbsp; ↑↓: Prev/Next<br>
+      A: Auto &nbsp;·&nbsp; L: Loop &nbsp;·&nbsp; F: Fullscreen
     </div>
 
     <!-- Swipe hint (mobile) -->
-    <div id="swipe-hint">↑ Swipe up for next &nbsp;·&nbsp; ↓ Swipe down for previous</div>
+    <div id="swipe-hint">↑ swipe next &nbsp;·&nbsp; ↓ swipe prev</div>
 
     <!-- Mobile bottom controls -->
     <div id="mobile-controls">
@@ -658,8 +869,8 @@ html, body {
         <button class="mobile-btn" id="loop-mobile" onclick="toggleLoop()">Loop: OFF</button>
       </div>
       <div class="mobile-btn-row">
-        <button class="mobile-btn" onclick="prevVideo()">⬆ Prev</button>
-        <button class="mobile-btn pass" onclick="nextVideo()">⬇ PASS</button>
+        <button class="mobile-btn" onclick="prevVideo()">↑ Prev</button>
+        <button class="mobile-btn pass" onclick="nextVideo()">↓ PASS</button>
       </div>
     </div>
 
@@ -671,19 +882,9 @@ html, body {
 <div id="toast"></div>
 
 <!-- ================================================================
-     JAVASCRIPT
+     JAVASCRIPT (logic unchanged)
      ================================================================ -->
 <script>
-// ──────────────────────────────────────────────────────────────────
-//  SOURCES
-//
-//  type: 'list' — loads a file once, iterates through URLs
-//    format: 'txt'  → one URL per line
-//    format: 'json' → ["url",...] or [["url",...]] or [{url,title},...]
-//
-//  type: 'api'  — each PASS hits the API for a fresh random video
-//                 (the endpoint redirects straight to an .mp4)
-// ──────────────────────────────────────────────────────────────────
 const SOURCES = [
   { id: 1, label: 'Local TXT',      type: 'list', format: 'txt',  url: 'videos.txt'  },
   { id: 2, label: 'Local JSON',     type: 'list', format: 'json', url: 'videos.json' },
@@ -694,22 +895,19 @@ const SOURCES = [
   { id: 7, label: 'NRZJ TikTok',    type: 'api',                  url: 'http://v.nrzj.vip/tiktok/video.php'                 },
   { id: 8, label: 'NRZJ Video 2',   type: 'api',                  url: 'http://video.nrzj.vip/video.php'                    },
   { id: 9, label: 'NRZJ TikTok 2',  type: 'api',                  url: 'http://video.nrzj.vip/tiktok/video.php'             },
+  { id:10, label: 'PF129',          type: 'api-fetch',            url: 'https://netsec.alwaysdata.net/proxy.php?src=https%3A%2F%2Fpf129.com%2Fxjj%2Fget%2Fget1.php' },
 ];
 
-// ──────────────────────────────────────────────────────────────────
-//  STATE
-// ──────────────────────────────────────────────────────────────────
 const state = {
   sourceId:     1,
-  videos:       [],    // [{url, title}] — list sources only
-  index:        0,     // list sources only
+  videos:       [],
+  index:        0,
   autoNext:     false,
   loop:         false,
-  badUrls:      new Set(),  // failed URLs never retried (list sources)
+  badUrls:      new Set(),
   skipCount:    0,
   skipTimer:    null,
   stalledTimer: null,
-  // Pause-gate
   videoCount:        0,
   gateTimer:         null,
   _countedThisLoad:  false,
@@ -719,9 +917,6 @@ function activeSource() {
   return SOURCES.find(s => s.id === state.sourceId) || SOURCES[0];
 }
 
-// ──────────────────────────────────────────────────────────────────
-//  DOM
-// ──────────────────────────────────────────────────────────────────
 const video      = document.getElementById('main-video');
 const overlay    = document.getElementById('overlay');
 const overlayMsg = document.getElementById('overlay-msg');
@@ -730,33 +925,25 @@ const swipeHint  = document.getElementById('swipe-hint');
 const counter    = document.getElementById('video-counter');
 const toast      = document.getElementById('toast');
 
-// ──────────────────────────────────────────────────────────────────
-//  LOAD SOURCE
-// ──────────────────────────────────────────────────────────────────
 async function loadSource(id) {
   const src = SOURCES.find(s => s.id === id);
   if (!src) return;
-
   state.sourceId  = id;
   state.badUrls   = new Set();
   state.skipCount = 0;
   clearTimeout(state.skipTimer);
   clearTimeout(state.stalledTimer);
-
-  // Update dropdown labels + active state
   updateDropdownLabel(src);
 
-  if (src.type === 'api') {
-    // No list to fetch — play directly; each call returns a fresh video
+  if (src.type === 'api' || src.type === 'api-fetch') {
     state.videos = [];
     state.index  = 0;
     hideOverlay();
     playCurrentVideo();
-    showToast('✓ ' + src.label + ' (live API)');
+    showToast('✓ ' + src.label + ' — live API');
     return;
   }
 
-  // List source — fetch the file
   showOverlay('Loading ' + src.label + '…');
   try {
     const res = await fetch(src.url + '?_=' + Date.now());
@@ -770,7 +957,6 @@ async function loadSource(id) {
         .filter(l => l.length > 0 && !l.startsWith('#'))
         .map(url => ({ url, title: '' }));
     } else {
-      // JSON: flat / nested [[...]] / [{url,title}]
       const raw = JSON.parse(text);
       if (!Array.isArray(raw)) throw new Error('JSON must be an array');
       const flat = (raw.length === 1 && Array.isArray(raw[0])) ? raw[0] : raw;
@@ -791,22 +977,46 @@ async function loadSource(id) {
     showToast('✓ ' + src.label + ' — ' + videos.length + ' videos');
   } catch (err) {
     showOverlay('⚠  ' + err.message);
-    console.error('[XJJ] Source load error:', err);
     showToast('Error loading ' + src.label);
   }
 }
 
-// ──────────────────────────────────────────────────────────────────
-//  PLAYBACK
-// ──────────────────────────────────────────────────────────────────
 function playCurrentVideo() {
   const src = activeSource();
   state.skipCount = 0;
   clearTimeout(state.skipTimer);
   clearTimeout(state.stalledTimer);
 
+  if (src.type === 'api-fetch') {
+    // Fetch API → response body is the mp4 URL as plain text
+    counter.textContent = src.label + ' — live';
+    state._countedThisLoad = false;
+    showOverlay('Fetching URL…');
+    const fetchUrl = src.url + (src.url.includes('?') ? '&' : '?') + '_=' + Date.now();
+    fetch(fetchUrl)
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+      .then(text => {
+        const mp4url = text.trim();
+        if (!mp4url || !mp4url.startsWith('http')) throw new Error('Invalid URL returned');
+        showOverlay('Loading…');
+        video.src  = mp4url;
+        video.loop = state.loop;
+        video.load();
+        state.stalledTimer = setTimeout(() => {
+          if (overlay.classList.contains('hidden')) return;
+          showOverlay('⚠ Timed out — press PASS to retry');
+          showToast('Timed out');
+        }, 10000);
+        video.play().catch(() => { clearTimeout(state.stalledTimer); hideOverlay(); showOverlay('▶ Tap to play'); });
+      })
+      .catch(err => {
+        showOverlay('⚠ ' + err.message + ' — press PASS to retry');
+        showToast('Fetch error: ' + err.message);
+      });
+    return;
+  }
+
   if (src.type === 'api') {
-    // Append timestamp so every call fetches a fresh random video
     const apiUrl = src.url + (src.url.includes('?') ? '&' : '?') + '_=' + Date.now();
     counter.textContent = src.label + ' — live';
     state._countedThisLoad = false;
@@ -814,32 +1024,21 @@ function playCurrentVideo() {
     video.src  = apiUrl;
     video.loop = state.loop;
     video.load();
-
-    // Watchdog: if nothing plays within 10 s, show timeout message
     state.stalledTimer = setTimeout(() => {
       if (overlay.classList.contains('hidden')) return;
-      console.warn('[XJJ] API timeout:', src.url);
-      showOverlay('⚠ API timed out — press PASS to try again');
+      showOverlay('⚠ API timed out — press PASS to retry');
       showToast('API timed out');
     }, 10000);
-
-    video.play().catch(() => {
-      clearTimeout(state.stalledTimer);
-      hideOverlay();
-      showOverlay('▶ Tap / click to play');
-    });
+    video.play().catch(() => { clearTimeout(state.stalledTimer); hideOverlay(); showOverlay('▶ Tap to play'); });
     return;
   }
 
-  // List source
   if (!state.videos.length) return;
-
-  // Skip known-bad URLs, up to full-circle
   const startIndex = state.index;
   while (state.badUrls.has(state.videos[state.index].url)) {
     state.index = (state.index + 1) % state.videos.length;
     if (state.index === startIndex) {
-      showOverlay('⚠ All videos in this source failed to load');
+      showOverlay('⚠ All videos in this source failed');
       showToast('No working videos in ' + src.label);
       return;
     }
@@ -854,54 +1053,31 @@ function playCurrentVideo() {
   video.src  = item.url;
   video.loop = state.loop;
   video.load();
-
-  // Watchdog: if canplay never fires within 8 s, mark as broken
   state.stalledTimer = setTimeout(() => {
     if (overlay.classList.contains('hidden')) return;
-    console.warn('[XJJ] Load timeout:', item.url);
     markBadAndSkip('Timed out');
   }, 8000);
-
-  video.play().catch(() => {
-    clearTimeout(state.stalledTimer);
-    hideOverlay();
-    showOverlay('▶ Tap / click to play');
-  });
+  video.play().catch(() => { clearTimeout(state.stalledTimer); hideOverlay(); showOverlay('▶ Tap to play'); });
 }
 
-// Mark current URL bad and auto-advance to next
 function markBadAndSkip(reason) {
   const src = activeSource();
   clearTimeout(state.stalledTimer);
-
-  if (src.type === 'api') {
-    // API errors: just retry with a fresh call
+  if (src.type === 'api' || src.type === 'api-fetch') {
     state.skipCount++;
     showOverlay('⚠ ' + reason + ' — retrying…');
     showToast('Retrying ' + src.label);
     state.skipTimer = setTimeout(playCurrentVideo, 1000);
     return;
   }
-
   const url = state.videos[state.index]?.url;
   if (!url) return;
-
   state.badUrls.add(url);
   state.skipCount++;
-
   const remaining = state.videos.length - state.badUrls.size;
-  console.warn('[XJJ] Bad video (' + reason + '):', url,
-               '| bad:', state.badUrls.size, '| remaining:', remaining);
-
-  if (remaining <= 0) {
-    showOverlay('⚠ All videos in this source failed to load');
-    showToast('No working videos in ' + src.label);
-    return;
-  }
-
-  showOverlay('⚠ ' + reason + ' — skipping… (' + state.badUrls.size + ' failed)');
-  showToast('Skipped broken video (' + remaining + ' remaining)');
-
+  if (remaining <= 0) { showOverlay('⚠ All videos failed'); return; }
+  showOverlay('⚠ ' + reason + ' — skipping…');
+  showToast('Skipped (' + remaining + ' remaining)');
   state.skipTimer = setTimeout(() => {
     state.index = (state.index + 1) % state.videos.length;
     playCurrentVideo();
@@ -911,7 +1087,7 @@ function markBadAndSkip(reason) {
 function nextVideo() {
   if (checkPauseGate()) return;
   const src = activeSource();
-  if (src.type === 'api') { playCurrentVideo(); return; } // fresh API call = new random video
+  if (src.type === 'api' || src.type === 'api-fetch') { playCurrentVideo(); return; }
   if (!state.videos.length) return;
   state.index = (state.index + 1) % state.videos.length;
   playCurrentVideo();
@@ -919,7 +1095,7 @@ function nextVideo() {
 
 function prevVideo() {
   const src = activeSource();
-  if (src.type === 'api') { playCurrentVideo(); return; } // no concept of "previous" for live API
+  if (src.type === 'api' || src.type === 'api-fetch') { playCurrentVideo(); return; }
   if (!state.videos.length) return;
   state.index = (state.index - 1 + state.videos.length) % state.videos.length;
   playCurrentVideo();
@@ -927,7 +1103,7 @@ function prevVideo() {
 
 function togglePlay() {
   if (!video.src) return;
-  if (video.paused) { video.play();  flashIcon('▶'); }
+  if (video.paused) { video.play(); flashIcon('▶'); }
   else              { video.pause(); flashIcon('⏸'); }
 }
 
@@ -938,7 +1114,7 @@ function flashIcon(icon) {
     transform:translate(-50%,-50%) scale(1);
     font-size:3.5rem; opacity:1;
     pointer-events:none; z-index:10;
-    text-shadow:0 0 20px rgba(0,0,0,0.6);
+    filter:drop-shadow(0 0 20px rgba(255,77,109,0.5));
     transition:none;
   `;
   clearTimeout(playFlash._t);
@@ -949,61 +1125,32 @@ function flashIcon(icon) {
   }, 120);
 }
 
-// ──────────────────────────────────────────────────────────────────
-//  VIDEO EVENTS
-// ──────────────────────────────────────────────────────────────────
-video.addEventListener('canplay', () => {
-  clearTimeout(state.stalledTimer);
-  hideOverlay();
+video.addEventListener('canplay',  () => { clearTimeout(state.stalledTimer); hideOverlay(); });
+video.addEventListener('playing',  () => {
+  clearTimeout(state.stalledTimer); hideOverlay();
+  if (!state._countedThisLoad) { state._countedThisLoad = true; state.videoCount++; }
 });
-video.addEventListener('playing', () => {
+video.addEventListener('waiting',  () => {
   clearTimeout(state.stalledTimer);
-  hideOverlay();
-  // Count each unique video that actually starts playing
-  if (!state._countedThisLoad) {
-    state._countedThisLoad = true;
-    state.videoCount++;
-  }
-});
-video.addEventListener('waiting', () => {
-  clearTimeout(state.stalledTimer);
-  state.stalledTimer = setTimeout(() => {
-    if (!overlay.classList.contains('hidden')) return;
-    markBadAndSkip('Stalled / no data');
-  }, 10000);
+  state.stalledTimer = setTimeout(() => { if (!overlay.classList.contains('hidden')) return; markBadAndSkip('Stalled'); }, 10000);
   showOverlay('Buffering…');
 });
-video.addEventListener('stalled', () => {
+video.addEventListener('stalled',  () => {
   clearTimeout(state.stalledTimer);
-  state.stalledTimer = setTimeout(() => {
-    markBadAndSkip('Stalled');
-  }, 6000);
+  state.stalledTimer = setTimeout(() => markBadAndSkip('Stalled'), 6000);
   showOverlay('Stalled…');
 });
-video.addEventListener('abort', () => {
-  if (video.src && video.readyState === 0) markBadAndSkip('Aborted');
-});
-video.addEventListener('error', () => {
-  const code  = video.error ? video.error.code : '?';
-  const msgs  = { 1:'Aborted', 2:'Network error', 3:'Decode error', 4:'Not supported' };
+video.addEventListener('abort',    () => { if (video.src && video.readyState === 0) markBadAndSkip('Aborted'); });
+video.addEventListener('error',    () => {
+  const code = video.error ? video.error.code : '?';
+  const msgs = { 1:'Aborted', 2:'Network error', 3:'Decode error', 4:'Not supported' };
   markBadAndSkip(msgs[code] || ('Error ' + code));
 });
-video.addEventListener('ended', () => {
-  if (state.autoNext && !state.loop) nextVideo();
-});
+video.addEventListener('ended',    () => { if (state.autoNext && !state.loop) nextVideo(); });
 video.addEventListener('dblclick', toggleFullscreen);
 
-// ──────────────────────────────────────────────────────────────────
-//  SOURCE SWITCHING
-// ──────────────────────────────────────────────────────────────────
-function switchSource(id) {
-  closeAllDropdowns();
-  loadSource(id);
-}
+function switchSource(id) { closeAllDropdowns(); loadSource(id); }
 
-// ──────────────────────────────────────────────────────────────────
-//  TOGGLES
-// ──────────────────────────────────────────────────────────────────
 function toggleAutoNext() {
   state.autoNext = !state.autoNext;
   document.getElementById('auto-next-toggle').checked = state.autoNext;
@@ -1023,9 +1170,6 @@ function toggleLoop() {
   showToast('Loop ' + (state.loop ? 'ON' : 'OFF'));
 }
 
-// ──────────────────────────────────────────────────────────────────
-//  FULLSCREEN
-// ──────────────────────────────────────────────────────────────────
 function toggleFullscreen() {
   if (document.fullscreenElement || document.webkitFullscreenElement) {
     (document.exitFullscreen || document.webkitExitFullscreen).call(document);
@@ -1035,9 +1179,6 @@ function toggleFullscreen() {
   }
 }
 
-// ──────────────────────────────────────────────────────────────────
-//  KEYBOARD
-// ──────────────────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
   switch (e.key) {
@@ -1045,47 +1186,25 @@ document.addEventListener('keydown', e => {
       e.preventDefault(); nextVideo(); break;
     case 'ArrowUp': case 'ArrowLeft': case 'p': case 'P':
       e.preventDefault(); prevVideo(); break;
-    case ' ':
-      e.preventDefault(); togglePlay(); break;
+    case ' ': e.preventDefault(); togglePlay(); break;
     case 'a': case 'A': toggleAutoNext(); break;
     case 'l': case 'L': toggleLoop(); break;
     case 'f': case 'F': toggleFullscreen(); break;
   }
 });
 
-// ──────────────────────────────────────────────────────────────────
-//  TOUCH / SWIPE (Mobile)
-// ──────────────────────────────────────────────────────────────────
 let touchStartY = 0, touchStartX = 0;
 const SWIPE_MIN = 50;
-
-document.addEventListener('touchstart', e => {
-  touchStartY = e.touches[0].clientY;
-  touchStartX = e.touches[0].clientX;
-}, { passive: true });
-
+document.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; touchStartX = e.touches[0].clientX; }, { passive: true });
 document.addEventListener('touchend', e => {
   const dy = touchStartY - e.changedTouches[0].clientY;
   const dx = touchStartX - e.changedTouches[0].clientX;
-  if (Math.abs(dy) > SWIPE_MIN && Math.abs(dy) > Math.abs(dx) * 1.2) {
-    dy > 0 ? nextVideo() : prevVideo();
-  }
+  if (Math.abs(dy) > SWIPE_MIN && Math.abs(dy) > Math.abs(dx) * 1.2) { dy > 0 ? nextVideo() : prevVideo(); }
 }, { passive: true });
 
-// ──────────────────────────────────────────────────────────────────
-//  OVERLAY HELPERS
-// ──────────────────────────────────────────────────────────────────
-function showOverlay(msg) {
-  overlay.classList.remove('hidden');
-  overlayMsg.textContent = msg || '';
-}
-function hideOverlay() {
-  overlay.classList.add('hidden');
-}
+function showOverlay(msg) { overlay.classList.remove('hidden'); overlayMsg.textContent = msg || ''; }
+function hideOverlay()    { overlay.classList.add('hidden'); }
 
-// ──────────────────────────────────────────────────────────────────
-//  TOAST
-// ──────────────────────────────────────────────────────────────────
 let toastTimer;
 function showToast(msg) {
   toast.textContent = msg;
@@ -1094,31 +1213,19 @@ function showToast(msg) {
   toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
 }
 
-// ──────────────────────────────────────────────────────────────────
-//  HIDE SWIPE HINT AFTER 5s
-// ──────────────────────────────────────────────────────────────────
 setTimeout(() => swipeHint.classList.add('hidden'), 5000);
 document.addEventListener('touchend', () => swipeHint.classList.add('hidden'), { once: true });
 
-// ──────────────────────────────────────────────────────────────────
-//  BUILD SOURCE BUTTONS DYNAMICALLY
-// ──────────────────────────────────────────────────────────────────
-// ──────────────────────────────────────────────────────────────────
-//  DROPDOWN HELPERS
-// ──────────────────────────────────────────────────────────────────
 function toggleDropdown(which) {
   const menu     = document.getElementById(which + '-dd-menu');
   const selected = document.getElementById(which + '-dd-selected');
   const isOpen   = menu.classList.contains('open');
   closeAllDropdowns();
-  if (!isOpen) {
-    menu.classList.add('open');
-    selected.classList.add('open');
-  }
+  if (!isOpen) { menu.classList.add('open'); selected.classList.add('open'); }
 }
 
 function closeAllDropdowns() {
-  ['sidebar', 'mobile'].forEach(which => {
+  ['sidebar','mobile'].forEach(which => {
     document.getElementById(which + '-dd-menu')?.classList.remove('open');
     document.getElementById(which + '-dd-selected')?.classList.remove('open');
   });
@@ -1127,28 +1234,25 @@ function closeAllDropdowns() {
 function updateDropdownLabel(src) {
   document.getElementById('sidebar-dd-label').textContent = src.label;
   document.getElementById('mobile-dd-label').textContent  = src.label;
-  // Update active state in both menus
   document.querySelectorAll('.dd-menu button').forEach(btn => {
     btn.classList.toggle('active', parseInt(btn.dataset.id) === src.id);
   });
 }
 
-// Close dropdowns when clicking outside
-document.addEventListener('click', e => {
-  if (!e.target.closest('.source-dropdown-wrap')) closeAllDropdowns();
-});
+document.addEventListener('click', e => { if (!e.target.closest('.source-dropdown-wrap')) closeAllDropdowns(); });
 
 function buildSourceButtons() {
-  ['sidebar', 'mobile'].forEach(which => {
+  ['sidebar','mobile'].forEach(which => {
     const menu = document.getElementById(which + '-dd-menu');
     menu.innerHTML = '';
     SOURCES.forEach((src, i) => {
-      const btn = document.createElement('button');
+      const btn   = document.createElement('button');
       btn.dataset.id = src.id;
       btn.className  = i === 0 ? 'active' : '';
-      const icon  = src.type === 'api' ? '🌐' : '📋';
-      const badge = '<span class="dd-badge badge-' + src.type + '">' +
-                    (src.type === 'api' ? 'LIVE' : 'FILE') + '</span>';
+      const icon  = (src.type === 'api' || src.type === 'api-fetch') ? '🌐' : '📋';
+      const badgeType = src.type === 'list' ? 'list' : 'api';
+      const badgeLabel = src.type === 'api-fetch' ? 'FETCH' : (src.type === 'api' ? 'LIVE' : 'FILE');
+      const badge = '<span class="dd-badge badge-' + badgeType + '">' + badgeLabel + '</span>';
       btn.innerHTML = '<span>' + icon + ' ' + src.label + '</span>' + badge;
       btn.onclick   = () => switchSource(src.id);
       menu.appendChild(btn);
@@ -1156,46 +1260,29 @@ function buildSourceButtons() {
   });
 }
 
-// ──────────────────────────────────────────────────────────────────
-//  PAUSE GATE (every 10 videos)
-// ──────────────────────────────────────────────────────────────────
+// ── PAUSE GATE ──────────────────────────────────────────────
 const GATE_EVERY   = 10;
 const GATE_TIMEOUT = 60;
 const PIC_API      = 'https://www.cunshao.com/666666/api/pic.php';
-const RING_CIRCUM  = 113;  // 2π × r18
+const RING_CIRCUM  = 113;
 
 function checkPauseGate() {
-  if (state.videoCount > 0 && state.videoCount % GATE_EVERY === 0) {
-    showPauseGate();
-    return true;
-  }
+  if (state.videoCount > 0 && state.videoCount % GATE_EVERY === 0) { showPauseGate(); return true; }
   return false;
 }
-
 function showPauseGate() {
   video.pause();
   document.getElementById('pause-gate').classList.add('visible');
   gateLoadImage();
   gateStartCountdown();
 }
-
 function hidePauseGate() {
   document.getElementById('pause-gate').classList.remove('visible');
   clearInterval(state.gateTimer);
   state.gateTimer = null;
 }
-
-function gateContinue() {
-  hidePauseGate();
-  video.play().catch(() => {});
-}
-
-function gateRefreshImage() {
-  clearInterval(state.gateTimer);
-  gateLoadImage();
-  gateStartCountdown();
-}
-
+function gateContinue() { hidePauseGate(); video.play().catch(() => {}); }
+function gateRefreshImage() { clearInterval(state.gateTimer); gateLoadImage(); gateStartCountdown(); }
 function gateLoadImage() {
   const img     = document.getElementById('gate-img');
   const shimmer = document.getElementById('gate-shimmer');
@@ -1203,40 +1290,24 @@ function gateLoadImage() {
   img.classList.add('loading');
   shimmer.classList.remove('hidden');
   const tmp   = new Image();
-  tmp.onload  = () => {
-    img.src = tmp.src;
-    img.classList.remove('loading');
-    shimmer.classList.add('hidden');
-  };
-  tmp.onerror = () => {
-    shimmer.classList.add('hidden');
-    img.classList.remove('loading');
-  };
+  tmp.onload  = () => { img.src = tmp.src; img.classList.remove('loading'); shimmer.classList.add('hidden'); };
+  tmp.onerror = () => { shimmer.classList.add('hidden'); img.classList.remove('loading'); };
   tmp.src = url;
 }
-
 function gateStartCountdown() {
   const ring  = document.getElementById('gate-ring');
   const numEl = document.getElementById('gate-countdown');
   let seconds = GATE_TIMEOUT;
   ring.style.strokeDashoffset = '0';
   numEl.textContent = seconds;
-
   state.gateTimer = setInterval(() => {
     seconds--;
     numEl.textContent = seconds;
     ring.style.strokeDashoffset = RING_CIRCUM * (1 - seconds / GATE_TIMEOUT);
-    if (seconds <= 0) {
-      clearInterval(state.gateTimer);
-      gateLoadImage();
-      gateStartCountdown();
-    }
+    if (seconds <= 0) { clearInterval(state.gateTimer); gateLoadImage(); gateStartCountdown(); }
   }, 1000);
 }
 
-// ──────────────────────────────────────────────────────────────────
-//  INIT
-// ──────────────────────────────────────────────────────────────────
 buildSourceButtons();
 loadSource(SOURCES[0].id);
 </script>
@@ -1245,7 +1316,7 @@ loadSource(SOURCES[0].id);
 <div id="pause-gate">
   <div class="gate-box">
     <div class="gate-title">⏸ Taking a break?</div>
-    <div class="gate-sub">You've watched 10 videos — here's a sneak peek. Continue when ready.</div>
+    <div class="gate-sub">You've watched 10 videos — here's a sneak peek.<br>Continue when you're ready.</div>
     <div class="gate-img-wrap">
       <img id="gate-img" src="" alt="Preview" class="loading">
       <div class="gate-img-shimmer" id="gate-shimmer"></div>
@@ -1259,15 +1330,14 @@ loadSource(SOURCES[0].id);
     </div>
     <div class="gate-actions">
       <button class="gate-btn refresh-img" onclick="gateRefreshImage()">↺ New Image</button>
-      <button class="gate-btn continue"    onclick="gateContinue()">▶ Continue Playing</button>
+      <button class="gate-btn continue"    onclick="gateContinue()">▶ Continue</button>
     </div>
   </div>
 </div>
 
+<!-- Analytics (unchanged) -->
 <script async src="https://ackee.itprosec.com/Yds1jiaxr4VTgb2u7lpc9B8OZWF6350k.js" data-ackee-server="https://ackee.itprosec.com" data-ackee-domain-id="3fa9a76e-a504-4ec5-806e-0679cfc59300" data-ackee-opts='{ "detailed": true }'></script>
-<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ee4816c3be6499ca1921607cb43ebec"}'></script><!-- End Cloudflare Web Analytics -->
-
-<!-- Global site tag (gtag.js) - Google Analytics -->
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ee4816c3be6499ca1921607cb43ebec"}'></script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-3NWLMBWBZS"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -1275,108 +1345,59 @@ loadSource(SOURCES[0].id);
   gtag('js', new Date());
   gtag('config', 'G-3NWLMBWBZS');
 </script>
-   
-<script async src="https://fundingchoicesmessages.google.com/i/pub-5660349373091698?ers=1" nonce="71EKVshklXofUN3O1mph_A"></script><script nonce="71EKVshklXofUN3O1mph_A">(function() {function signalGooglefcPresent() {if (!window.frames['googlefcPresent']) {if (document.body) {const iframe = document.createElement('iframe'); iframe.style = 'width: 0; height: 0; border: none; z-index: -1000; left: -1000px; top: -1000px;'; iframe.style.display = 'none'; iframe.name = 'googlefcPresent'; document.body.appendChild(iframe);} else {setTimeout(signalGooglefcPresent, 0);}}}signalGooglefcPresent();})();</script>
-<script async custom-element="amp-auto-ads" src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"> </script>
+
+<script async src="https://fundingchoicesmessages.google.com/i/pub-5660349373091698?ers=1" nonce="71EKVshklXofUN3O1mph_A"></script>
+<script nonce="71EKVshklXofUN3O1mph_A">(function() {function signalGooglefcPresent() {if (!window.frames['googlefcPresent']) {if (document.body) {const iframe = document.createElement('iframe'); iframe.style = 'width: 0; height: 0; border: none; z-index: -1000; left: -1000px; top: -1000px;'; iframe.style.display = 'none'; iframe.name = 'googlefcPresent'; document.body.appendChild(iframe);} else {setTimeout(signalGooglefcPresent, 0);}}}signalGooglefcPresent();})();</script>
+<script async custom-element="amp-auto-ads" src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"></script>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5660349373091698" crossorigin="anonymous"></script>
+<div id="ezoic-pub-ad-placeholder-608"></div>
+<div id="ezoic-pub-ad-placeholder-143"></div>
+<amp-auto-ads type="adsense" data-ad-client="ca-pub-5660349373091698"></amp-auto-ads>
+<amp-ad width="100vw" height="320" type="adsense" data-ad-client="ca-pub-5660349373091698" data-ad-slot="7912531145" data-auto-format="rspv" data-full-width=""><div overflow=""></div></amp-ad>
 
-<!-- Ezoic - sidebar_floating_1 - sidebar_floating_1 -->
-<div id="ezoic-pub-ad-placeholder-608"> </div>
-<!-- End Ezoic - sidebar_floating_1 - sidebar_floating_1 -->
-
-<!-- Ezoic - sidebar_middle - sidebar_middle -->
-<div id="ezoic-pub-ad-placeholder-143"> </div>
-<!-- End Ezoic - sidebar_middle - sidebar_middle -->
-
-<amp-auto-ads type="adsense"
-        data-ad-client="ca-pub-5660349373091698">
-</amp-auto-ads>
-<amp-ad width="100vw" height="320"
-     type="adsense"
-     data-ad-client="ca-pub-5660349373091698"
-     data-ad-slot="7912531145"
-     data-auto-format="rspv"
-     data-full-width="">
-  <div overflow=""></div>
-</amp-ad>
-   
-<style>
-#adblock-overlay {
-  display: none; /* hidden by default */
-  position: fixed; top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(255,255,255,0.95);
-  z-index: 9999;
-  text-align: center;
-  padding-top: 20%;
-  box-sizing: border-box;
-  font: bold 16px Verdana,Arial,sans-serif;
-  color: #000;
-}
-#adblock-overlay button {
-  margin-top: 20px;
-  padding: 10px 20px;
-  font-size: 14px;
-}
-</style>
+<!-- Ad block detection -->
 <div id="adblock-overlay">
-  Please disable your ad blocker to support us!<br>
-  <small>Visit blog.51sec.org, www.51sec.org for more.</small><br>
+  <p>Please disable your ad blocker to support us!</p>
+  <small>Visit blog.51sec.org · www.51sec.org for more</small>
   <button id="adblock-close-btn" disabled>20</button>
 </div>
 
 <script>
 (function(){
   async function detectAdBlock() {
-    return new Promise(resolve=>{
+    return new Promise(resolve => {
       const bait = document.createElement('div');
       bait.className = 'ads ad-banner adunit';
-      bait.style.height='1px'; bait.style.position='absolute';
+      bait.style.height = '1px'; bait.style.position = 'absolute';
       document.body.appendChild(bait);
-      setTimeout(()=>{
-        const blocked = getComputedStyle(bait).display=='none' || bait.offsetParent===null;
+      setTimeout(() => {
+        const blocked = getComputedStyle(bait).display == 'none' || bait.offsetParent === null;
         document.body.removeChild(bait);
         resolve(blocked);
       }, 100);
     });
   }
-
-  async function checkAndShowOverlay(){
-    const isBlocked = await detectAdBlock();
-    if(isBlocked){
-      showOverlay();
-    }
+  async function checkAndShowOverlay() {
+    if (await detectAdBlock()) showAdBlockOverlay();
   }
-
-  function showOverlay(){
-    const overlay = document.getElementById('adblock-overlay');
-    overlay.style.display='block';
-
+  function showAdBlockOverlay() {
+    const ov  = document.getElementById('adblock-overlay');
     const btn = document.getElementById('adblock-close-btn');
+    ov.style.display = 'block';
     let countdown = 20;
     btn.disabled = true;
     btn.textContent = countdown;
-
-    const timer = setInterval(()=>{
+    const timer = setInterval(() => {
       countdown--;
       btn.textContent = countdown;
-      if(countdown<=0){
-        clearInterval(timer);
-        btn.textContent = 'Close';
-        btn.disabled = false;
-      }
-    },1000);
-
-    btn.onclick = ()=>{
-      overlay.style.display='none';
-    }
+      if (countdown <= 0) { clearInterval(timer); btn.textContent = 'Close'; btn.disabled = false; }
+    }, 1000);
+    btn.onclick = () => { ov.style.display = 'none'; };
   }
-  // Run once at start
   checkAndShowOverlay();
-  // Repeat every minute
   setInterval(checkAndShowOverlay, 60000);
 })();
-</script>	
-   
+</script>
+
 </body>
 </html>
