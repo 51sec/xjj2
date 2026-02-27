@@ -6,3 +6,5 @@ Easiest way to deploy it is to fork the project and use cloudflare page to host 
 
 
 You can use your own domain from Cloudflare to access it. 
+
+https://xjj.51sec.org
