@@ -223,11 +223,17 @@
   // globals (state, video, SOURCES, activeSource, etc.) are declared —
   // functions below only read those at click-time, well after that point,
   // so load order just needs this file to appear before the main script.
+  //
+  // startApp() is called first and wrapped so a failure anywhere in this
+  // file's own UI setup (injectStyles/injectReportButton/initConsentBanner)
+  // can never prevent the core video player from starting — this file is
+  // meant to be a strictly optional add-on, not a dependency the player
+  // can silently fail behind.
   // ---------------------------------------------------------------------
   window.initComplianceGate = function (startApp) {
-    injectStyles();
-    injectReportButton();
     startApp();
-    initConsentBanner();
+    try { injectStyles(); } catch (e) { /* non-critical: cosmetic only */ }
+    try { injectReportButton(); } catch (e) { /* non-critical: report button only */ }
+    try { initConsentBanner(); } catch (e) { /* non-critical: consent banner only */ }
   };
 })();
