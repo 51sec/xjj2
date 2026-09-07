@@ -1098,16 +1098,19 @@ body::before {
     <hr class="sidebar-divider">
 
     <div id="sidebar-ad-space-2">
-      <!-- xjj-sidebar-2 — TODO: create this ad unit in AdSense and replace
-           the placeholder data-ad-slot below. Fixed 160x600 (wide
-           skyscraper) — the sidebar now scrolls (see #sidebar's
-           overflow-y:auto), so a tall unit at the very end is safe; it
-           won't push other controls off-screen the way it did when it was
-           responsive and placed higher up. -->
+      <!-- Reuses the "xjj-sidebar" ad unit (slot 2402890298) at a
+           different fixed size (160x600) than its first placement above.
+           This was briefly auto/responsive on the theory that being the
+           last element in a scrollable sidebar made oversized creatives
+           harmless — that turned out to be wrong: an expandable/
+           interactive creative rendered as a viewport-relative overlay
+           covering the video, ignoring where its container sits on the
+           page entirely. Fixed size is the only mitigation that's
+           actually held up across testing, here included. -->
       <ins class="adsbygoogle"
            style="display:inline-block; width:160px; height:600px;"
            data-ad-client="ca-pub-5660349373091698"
-           data-ad-slot="0000000002"></ins>
+           data-ad-slot="2402890298"></ins>
       <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
   </nav>
