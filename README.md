@@ -31,10 +31,11 @@ A single-file HTML5 video player that streams videos from local lists (`.txt`/`.
 - **Responsive UI** — a sidebar with dropdown/controls on desktop, condensed top bar and bottom control strip on mobile and tablet, with touch-friendly input sizing.
 - **"Take a break" pause gate** — every 6 videos, playback pauses and shows a modal (with an ad slot, countdown, and social links) before continuing. The preview image refreshes on a countdown that starts at 5 seconds and grows a little longer each cycle, Continue is disabled for the first 5 seconds so the ad gets a real view, and the gate auto-continues after 60 seconds total if left untouched.
 - **Toast notifications and loading overlay** for source switches, errors, and buffering states.
-- **Ad-block detection overlay** and built-in ad integrations (Google AdSense Auto ads, manual display units, Ezoic) — optional and easy to strip out if you don't need them (see [Self-hosting notes](#self-hosting-notes)).
+- **Ad-block detection overlay** and built-in ad integrations (Google AdSense manual display units, Ezoic) — optional and easy to strip out if you don't need them (see [Self-hosting notes](#self-hosting-notes)).
 - **Cookie consent banner** (`compliance.js`) — Google Analytics and Cloudflare Insights only load after a visitor explicitly accepts; rejecting keeps them off entirely.
 - **Per-video report button** (`compliance.js`) — a 🚩 Report control near the video permanently removes that specific video from rotation on your device (persisted in `localStorage`), independent of the automatic failover for broken links.
-- **Legal / Terms / DMCA page** ([`legal.html`](legal.html)) — a standalone page covering content sourcing, no-warranty/no-ownership disclaimer, the DMCA takedown procedure and contact, and the privacy/cookie policy. Linked from the sidebar footer, the break modal, and the mobile top bar.
+- **Legal / Terms / DMCA page** ([`legal.html`](legal.html)) — a standalone page covering content sourcing, no-warranty/no-ownership disclaimer, the DMCA takedown procedure and contact, and the privacy/cookie policy. Linked from the global footer, the break modal, and the mobile top bar.
+- **Global footer** — copyright, GitHub link, and the Terms & DMCA link live in a slim bar at the bottom of the whole app (not just the sidebar), so they're visible on mobile too and don't compete with the sidebar's other content for space.
 
 ## Deployment
 
@@ -72,8 +73,9 @@ The source loaded on startup is controlled by `DEFAULT_SOURCE_ID` in `index.html
 
 The player is tuned to maximize ad exposure and session length:
 
-- **Google AdSense Auto ads** are explicitly enabled (`enable_page_level_ads: true`) so Google places responsive ads — including mobile anchor/vignette units — automatically, without a hand-rolled fixed banner that could overlap tap targets. This replaced a set of `<amp-auto-ads>`/`<amp-ad>` tags that were inert on this non-AMP page (they need the full AMP runtime to render, which this page doesn't load).
-- **Two manual display ad units** were added and are both live: one in the sidebar (`#sidebar-ad-space`, desktop only, slot `2402890298` / "xjj-sidebar") and one inside the "take a break" modal (shown to every visitor, every 6 videos, on both desktop and mobile, slot `7463645282` / "XJJ - Break Modal").
+- **Two manual display ad units** are live: one near the top of the sidebar (`#sidebar-ad-space`, desktop only, slot `2402890298` / "xjj-sidebar") and one inside the "take a break" modal (shown to every visitor, every 8 videos, on both desktop and mobile, slot `7463645282` / "XJJ - Break Modal").
+- **Google AdSense Auto ads** (`enable_page_level_ads`) was tried and removed. On this app's full-screen, `overflow: hidden` layout, Google's auto-injected vignette ad rendered as a large box covering the video, with its own collapse control not responding to clicks — a bad fit between Auto ads' dynamic page-level placement and this page's non-standard, app-like (not conventional scrolling document) layout. Stick to the two manual units above instead of re-enabling this. This also replaced an older set of `<amp-auto-ads>`/`<amp-ad>` tags that were inert on this non-AMP page (they need the full AMP runtime to render, which this page doesn't load).
+- The sidebar ad sits right after the source picker, before the Playback/Navigate/Custom Source sections — earlier it was pushed to the bottom of the sidebar (below several toggle rows, nav buttons, and a form), which on typical laptop screens meant it was clipped below the fold and never rendered. `#sidebar` also now has `overflow-y: auto` as a safety net.
 - The break modal's **Continue** button is disabled for 5 seconds (a countdown label shows the remaining time) so its ad slot gets a guaranteed minimum view, similar to a skippable video ad. **Stop** is never gated.
 - The break interval (`GATE_EVERY` in `index.html`) was reduced from every 10 videos to every **8**, increasing how often the ad-bearing break modal appears.
 - **Auto Next defaults to on**, and audio starts at a quiet **20% volume** (`DEFAULT_VOLUME` in `index.html`) instead of full mute or full volume. Mobile browsers only allow autoplay when a video starts truly `muted`, so the `<video>` element starts muted in HTML for that reason, then the player automatically drops mute (keeping the low volume) the instant the first video actually begins playing — a standard technique, since changing `muted` after playback has started doesn't re-trigger autoplay restrictions the way starting unmuted would. This reduces how often a visitor hits a "▶ Tap to play" wall and bounces before any video (or ad break) plays, while still being audible rather than silent. The Mute toggle always works normally after that.
@@ -92,7 +94,7 @@ This player streams video content from third-party sources (local playlists you 
 
 To help with that, two files handle compliance concerns separately from the player itself:
 
-- **[`legal.html`](legal.html)** — Terms of Use, no-warranty/no-ownership disclaimer, the DMCA takedown procedure with contact info, and the privacy/cookie policy. Reachable from the sidebar footer, the break modal, and the mobile top bar (📄 icon).
+- **[`legal.html`](legal.html)** — Terms of Use, no-warranty/no-ownership disclaimer, the DMCA takedown procedure with contact info, and the privacy/cookie policy. Reachable from the global footer, the break modal, and the mobile top bar (📄 icon).
 - **[`compliance.js`](compliance.js)** — implements, independently of the core player:
   - a **cookie consent banner** that gates Google Analytics and Cloudflare Insights behind an explicit accept/reject choice;
   - a **🚩 Report** button near the video that permanently removes the current video's URL from rotation on that device.

@@ -229,8 +229,35 @@ body::before {
 /* ── APP SHELL ─────────────────────────────────────────────── */
 #app {
   display: flex;
-  width: 100%; height: 100%;
+  width: 100%; height: calc(100% - 30px);
   position: relative; z-index: 1;
+}
+
+#app-footer {
+  width: 100%; height: 30px; min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-subtle);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow-x: auto;
+  position: relative;
+  z-index: 30;
+}
+#app-footer a { color: var(--text-muted); text-decoration: underline; flex-shrink: 0; }
+#app-footer a:hover { color: var(--accent); }
+.footer-disclaimer { overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 768px) {
+  #app { height: calc(100% - 26px); }
+  #app-footer { height: 26px; min-height: 26px; font-size: 0.58rem; gap: 8px; }
+  .footer-disclaimer { display: none; }
 }
 
 /* ── PC SIDEBAR ────────────────────────────────────────────── */
@@ -245,6 +272,7 @@ body::before {
   gap: 2px;
   z-index: 10;
   position: relative;
+  overflow-y: auto;
 }
 
 /* Sidebar subtle gradient top edge */
@@ -414,24 +442,6 @@ body::before {
 .custom-source-select:focus { border-color: var(--accent); }
 .custom-source-select { cursor: pointer; }
 
-/* Sidebar copyright */
-.sidebar-copyright {
-  margin-top: auto;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-}
-.copyright-text {
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  color: var(--text-subtle);
-  text-align: center;
-  line-height: 1.7;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
 .github-link {
   display: inline-flex;
   color: var(--text-subtle);
@@ -972,6 +982,20 @@ body::before {
 
     <hr class="sidebar-divider">
 
+    <div id="sidebar-ad-space">
+      <!-- xjj-sidebar -->
+      <div class="ad-label">Advertisement</div>
+      <ins class="adsbygoogle"
+           style="display:block; width:100%; min-height:250px;"
+           data-ad-client="ca-pub-5660349373091698"
+           data-ad-slot="2402890298"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+
+    <hr class="sidebar-divider">
+
     <div class="sidebar-section-label">Playback</div>
     <div class="toggle-row">
       <span>Auto Next</span>
@@ -1021,32 +1045,6 @@ body::before {
         <option value="api-fetch">API — fetch URL</option>
       </select>
       <button class="nav-arrow-btn" onclick="addCustomSource()">＋&nbsp;&nbsp;Add Source</button>
-    </div>
-
-    <div class="sidebar-copyright">
-      <div class="copyright-text">
-        <span title="Author: NetSec — https://51sec.org">© 2026 NetSec</span>
-        <a class="github-link" href="https://github.com/51sec/xjj2" target="_blank" rel="noopener" title="View on GitHub">
-          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
-          </svg>
-        </a>
-      </div>
-      <div class="disclaimer-text">
-        Videos are aggregated from third-party sources. We do not host, produce, or endorse this content.
-        <a href="legal.html" target="_blank" rel="noopener">Terms &amp; DMCA</a>
-      </div>
-      <div id="sidebar-ad-space" style="margin-top: 12px;">
-        <!-- xjj-sidebar -->
-        <div class="ad-label">Advertisement</div>
-        <ins class="adsbygoogle"
-             style="display:block; width:100%; min-height:250px;"
-             data-ad-client="ca-pub-5660349373091698"
-             data-ad-slot="2402890298"
-             data-ad-format="auto"
-             data-full-width-responsive="true"></ins>
-        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-      </div>
     </div>
   </nav>
 
@@ -1101,6 +1099,21 @@ body::before {
 
 </div>
 
+<!-- ── APP FOOTER (copyright / disclaimer / legal) ──────────────
+     Global, not sidebar-only, so it's visible on mobile too (the
+     sidebar is hidden there) and doesn't compete with the sidebar's
+     other content and ad slot for vertical space. ─────────────── -->
+<div id="app-footer">
+  <span title="Author: NetSec — https://51sec.org">© 2026 NetSec</span>
+  <a class="github-link" href="https://github.com/51sec/xjj2" target="_blank" rel="noopener" title="View on GitHub">
+    <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+    </svg>
+  </a>
+  <span class="footer-disclaimer">Videos are aggregated from third-party sources. We do not host, produce, or endorse this content.</span>
+  <a href="legal.html" target="_blank" rel="noopener">Terms &amp; DMCA</a>
+</div>
+
 <!-- Toast -->
 <div id="toast"></div>
 
@@ -1129,7 +1142,7 @@ const SOURCES = [
   { id: 8, label: 'NRZJ Video 2',   type: 'api',                  url: 'http://video.nrzj.vip/video.php'                    },
   { id: 9, label: 'NRZJ TikTok 2',  type: 'api',                  url: 'http://video.nrzj.vip/tiktok/video.php'             },
   { id:10, label: 'PF129',          type: 'api-fetch',            url: 'https://netsec.alwaysdata.net/proxy.php?src=https%3A%2F%2Fpf129.com%2Fxjj%2Fget%2Fget1.php' },
-  { id:11, label: 'WPON Girl',      type: 'api-fetch',            url: 'https://tucdn.wpon.cn/api-girl/index.php?wpon=url' },
+  { id:11, label: 'WPON Girl',      type: 'api-fetch',            url: 'https://netsec.alwaysdata.net/proxy.php?src=https%3A%2F%2Ftucdn.wpon.cn%2Fapi-girl%2Findex.php%3Fwpon%3Durl' },
 ];
 
 const MAX_API_RETRIES     = 5;
@@ -1797,19 +1810,18 @@ if (typeof initComplianceGate === 'function') {
 <script async src="https://fundingchoicesmessages.google.com/i/pub-5660349373091698?ers=1" nonce="71EKVshklXofUN3O1mph_A"></script>
 <script nonce="71EKVshklXofUN3O1mph_A">(function() {function signalGooglefcPresent() {if (!window.frames['googlefcPresent']) {if (document.body) {const iframe = document.createElement('iframe'); iframe.style = 'width: 0; height: 0; border: none; z-index: -1000; left: -1000px; top: -1000px;'; iframe.style.display = 'none'; iframe.name = 'googlefcPresent'; document.body.appendChild(iframe);} else {setTimeout(signalGooglefcPresent, 0);}}}signalGooglefcPresent();})();</script>
 
-<!-- AdSense base library + explicit Auto ads opt-in. Auto ads handles
-     responsive placements (including mobile anchor/vignette units) on its
-     own, which is safer than hand-rolling a fixed mobile banner that could
-     overlap tap targets and risk an invalid-clicks policy hit. This
-     replaces the old <amp-auto-ads>/<amp-ad> tags, which require the full
-     AMP runtime to render and were inert on this non-AMP page. -->
+<!-- AdSense base library, used by the two manual <ins class="adsbygoogle">
+     units (sidebar + break modal) elsewhere on this page. Auto ads
+     (enable_page_level_ads) was tried here and removed: on this app's
+     full-screen, overflow:hidden layout, Google's auto-injected vignette
+     ad rendered as a large box covering the video, and its own collapse
+     control didn't respond to clicks — a bad interaction between Auto ads'
+     page-level placement and this page's non-standard layout, not
+     something fixable from our side. Stick to manual, explicitly-placed
+     ad units instead. This also replaced the old <amp-auto-ads>/<amp-ad>
+     tags, which required the full AMP runtime to render and were inert on
+     this non-AMP page. -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5660349373091698" crossorigin="anonymous"></script>
-<script>
-  (window.adsbygoogle = window.adsbygoogle || []).push({
-    google_ad_client: "ca-pub-5660349373091698",
-    enable_page_level_ads: true
-  });
-</script>
 <div id="ezoic-pub-ad-placeholder-608"></div>
 <div id="ezoic-pub-ad-placeholder-143"></div>
 
