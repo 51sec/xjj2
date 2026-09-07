@@ -1037,11 +1037,12 @@ body::before {
         <a href="legal.html" target="_blank" rel="noopener">Terms &amp; DMCA</a>
       </div>
       <div id="sidebar-ad-space" style="margin-top: 12px;">
+        <!-- xjj-sidebar -->
         <div class="ad-label">Advertisement</div>
         <ins class="adsbygoogle"
              style="display:block; width:100%; min-height:250px;"
              data-ad-client="ca-pub-5660349373091698"
-             data-ad-slot="0000000000"
+             data-ad-slot="2402890298"
              data-ad-format="auto"
              data-full-width-responsive="true"></ins>
         <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
@@ -1103,11 +1104,11 @@ body::before {
 <!-- Toast -->
 <div id="toast"></div>
 
-<!-- Age-gate interstitial, cookie consent banner, and per-video report
-     button (compliance.js). Loaded before the main script below so its
-     `initComplianceGate` hook is defined in time; see legal.html for the
-     Terms of Use / DMCA / Privacy policy it links to. Optional — remove
-     this tag and index.html falls back to starting immediately. -->
+<!-- Cookie consent banner and per-video report button (compliance.js).
+     Loaded before the main script below so its `initComplianceGate` hook
+     is defined in time; see legal.html for the Terms of Use / DMCA /
+     Privacy policy it links to. Optional — remove this tag and index.html
+     falls back to starting immediately. -->
 <script src="compliance.js"></script>
 
 <!-- ================================================================
@@ -1133,6 +1134,7 @@ const SOURCES = [
 const MAX_API_RETRIES     = 5;
 const PAUSE_AUTO_CONTINUE = 60; // seconds of inactivity before the break modal auto-continues
 const PAUSE_START_SECONDS = 5;  // first image-change countdown in the break modal
+const DEFAULT_VOLUME      = 0.05; // quiet-but-audible autoplay instead of fully silent
 
 const state = {
   sourceId:     1,
@@ -1153,6 +1155,7 @@ const state = {
   pauseDuration:     0,
   pauseElapsed:      0,
   _countedThisLoad:  false,
+  _autoUnmuted:      false,
 };
 
 function activeSource() {
@@ -1160,6 +1163,7 @@ function activeSource() {
 }
 
 const video      = document.getElementById('main-video');
+video.volume     = DEFAULT_VOLUME; // takes effect once auto-unmuted after the first frame plays
 const overlay    = document.getElementById('overlay');
 const overlayMsg = document.getElementById('overlay-msg');
 const playFlash  = document.getElementById('play-flash');
@@ -1403,6 +1407,17 @@ video.addEventListener('playing',  () => {
   state.apiRetryCount = 0;
   if (!state._countedThisLoad) { state._countedThisLoad = true; state.videoCount++; }
   preloadNextVideo();
+  // The video starts `muted` (in the HTML) so mobile browsers reliably
+  // autoplay it; once playback has actually started, drop mute in favor of
+  // the quiet DEFAULT_VOLUME instead of staying fully silent. Changing
+  // `muted` after playback begins doesn't re-trigger autoplay restrictions,
+  // unlike calling play() unmuted from the start would. Only happens once —
+  // after that, the Mute toggle is the user's own choice to respect.
+  if (!state._autoUnmuted) {
+    state._autoUnmuted = true;
+    video.muted = false;
+    syncMuteUI();
+  }
 });
 video.addEventListener('waiting',  () => {
   clearTimeout(state.stalledTimer);
@@ -1451,10 +1466,7 @@ function toggleLoop() {
 
 function toggleMute() {
   video.muted = !video.muted;
-  document.getElementById('mute-toggle').checked = video.muted;
-  const btn = document.getElementById('mute-mobile');
-  btn.textContent = 'Mute: ' + (video.muted ? 'ON' : 'OFF');
-  btn.classList.toggle('btn-active', video.muted);
+  syncMuteUI();
   showToast('Mute ' + (video.muted ? 'ON' : 'OFF'));
 }
 
@@ -1692,16 +1704,20 @@ function gateStop() {
 // default for reliable autoplay) in the toggle switches and mobile buttons,
 // since those defaults are no longer set by a user click through
 // toggleAutoNext()/toggleMute().
+function syncMuteUI() {
+  document.getElementById('mute-toggle').checked = video.muted;
+  const muteBtn = document.getElementById('mute-mobile');
+  muteBtn.textContent = 'Mute: ' + (video.muted ? 'ON' : 'OFF');
+  muteBtn.classList.toggle('btn-active', video.muted);
+}
+
 function syncControlUI() {
   document.getElementById('auto-next-toggle').checked = state.autoNext;
   const autoBtn = document.getElementById('auto-mobile');
   autoBtn.textContent = 'Auto: ' + (state.autoNext ? 'ON' : 'OFF');
   autoBtn.classList.toggle('btn-active', state.autoNext);
 
-  document.getElementById('mute-toggle').checked = video.muted;
-  const muteBtn = document.getElementById('mute-mobile');
-  muteBtn.textContent = 'Mute: ' + (video.muted ? 'ON' : 'OFF');
-  muteBtn.classList.toggle('btn-active', video.muted);
+  syncMuteUI();
 }
 
 function startApp() {
@@ -1711,9 +1727,9 @@ function startApp() {
   loadSource(SOURCES[0].id);
 }
 
-// If compliance.js is present, it gates startup behind the age/content
-// disclaimer interstitial and then starts the app itself. If that file has
-// been removed (see README "Self-hosting notes"), start immediately.
+// If compliance.js is present, it starts the app itself (after wiring up
+// the report button and consent banner). If that file has been removed
+// (see README "Self-hosting notes"), start immediately.
 if (typeof initComplianceGate === 'function') {
   initComplianceGate(startApp);
 } else {
@@ -1731,11 +1747,12 @@ if (typeof initComplianceGate === 'function') {
     </div>
     <div class="gate-timer" id="gate-timer">New image in 5s</div>
     <div class="gate-ad-slot">
+      <!-- XJJ - Break Modal -->
       <div class="ad-label">Advertisement</div>
       <ins class="adsbygoogle"
            style="display:block; width:100%; min-height:90px;"
            data-ad-client="ca-pub-5660349373091698"
-           data-ad-slot="0000000001"
+           data-ad-slot="7463645282"
            data-ad-format="auto"
            data-full-width-responsive="true"></ins>
       <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>

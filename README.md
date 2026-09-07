@@ -13,7 +13,7 @@ A single-file HTML5 video player that streams videos from local lists (`.txt`/`.
   - Local playlist files — plain-text (`videos.txt`, one URL per line) or JSON (`videos.json`, array of URL strings or `{url, title}` objects)
   - Live API sources that return a direct video URL or stream (`api` / `api-fetch` types), including several pre-configured community endpoints
 - **Random start & sequential playback** — playlists start at a random video, then move forward/back in order.
-- **Auto Next / Loop / Mute toggles** — auto-advance to the next video on end, loop the current video indefinitely, or mute audio, from the sidebar (desktop) or bottom bar (mobile). Auto Next is **on** and the video is **muted** by default (see [Ad monetization](#ad-monetization--watch-time) below) — both are one click/tap to turn off.
+- **Auto Next / Loop / Mute toggles** — auto-advance to the next video on end, loop the current video indefinitely, or mute audio, from the sidebar (desktop) or bottom bar (mobile). Auto Next is **on** by default, and audio starts at a quiet **5% volume** rather than fully muted or full blast (see [Ad monetization](#ad-monetization--watch-time) below) — both are one click/tap to change.
 - **Dark / Light theme toggle** — switch instantly, remembered across visits via `localStorage`, with no flash of the wrong theme on reload.
 - **Add your own source at runtime** — paste a `.txt`/`.json` playlist URL or an API endpoint directly into the UI (desktop sidebar or the mobile "+" panel) to add it to the source list without touching the code.
 - **Video title display** — shows the `title`/`name` field from JSON playlist entries when present.
@@ -32,10 +32,9 @@ A single-file HTML5 video player that streams videos from local lists (`.txt`/`.
 - **"Take a break" pause gate** — every 6 videos, playback pauses and shows a modal (with an ad slot, countdown, and social links) before continuing. The preview image refreshes on a countdown that starts at 5 seconds and grows a little longer each cycle, Continue is disabled for the first 5 seconds so the ad gets a real view, and the gate auto-continues after 60 seconds total if left untouched.
 - **Toast notifications and loading overlay** for source switches, errors, and buffering states.
 - **Ad-block detection overlay** and built-in ad integrations (Google AdSense Auto ads, manual display units, Ezoic) — optional and easy to strip out if you don't need them (see [Self-hosting notes](#self-hosting-notes)).
-- **Age-gate / content disclaimer interstitial** (`compliance.js`) — a one-time click-through gate, shown before the player starts, that states the content is third-party/unmoderated and requires confirming you're 18+ before entering. Links to [`legal.html`](legal.html) for full terms.
 - **Cookie consent banner** (`compliance.js`) — Google Analytics and Cloudflare Insights only load after a visitor explicitly accepts; rejecting keeps them off entirely.
 - **Per-video report button** (`compliance.js`) — a 🚩 Report control near the video permanently removes that specific video from rotation on your device (persisted in `localStorage`), independent of the automatic failover for broken links.
-- **Legal / Terms / DMCA page** ([`legal.html`](legal.html)) — a standalone page covering content sourcing, age requirement, no-warranty/no-ownership disclaimer, the DMCA takedown procedure and contact, and the privacy/cookie policy. Linked from the sidebar footer, the break modal, and the mobile top bar.
+- **Legal / Terms / DMCA page** ([`legal.html`](legal.html)) — a standalone page covering content sourcing, no-warranty/no-ownership disclaimer, the DMCA takedown procedure and contact, and the privacy/cookie policy. Linked from the sidebar footer, the break modal, and the mobile top bar.
 
 ## Deployment
 
@@ -72,16 +71,16 @@ You can also add a source at runtime without editing the file — use the "Custo
 The player is tuned to maximize ad exposure and session length:
 
 - **Google AdSense Auto ads** are explicitly enabled (`enable_page_level_ads: true`) so Google places responsive ads — including mobile anchor/vignette units — automatically, without a hand-rolled fixed banner that could overlap tap targets. This replaced a set of `<amp-auto-ads>`/`<amp-ad>` tags that were inert on this non-AMP page (they need the full AMP runtime to render, which this page doesn't load).
-- **Two manual display ad units** were added: one in the sidebar (`#sidebar-ad-space`, desktop only) and one inside the "take a break" modal (shown to every visitor, every 6 videos, on both desktop and mobile). **Both currently use placeholder `data-ad-slot` values (`0000000000` / `0000000001`) — create matching ad units in your AdSense dashboard and replace those IDs, or they'll render blank.**
+- **Two manual display ad units** were added and are both live: one in the sidebar (`#sidebar-ad-space`, desktop only, slot `2402890298` / "xjj-sidebar") and one inside the "take a break" modal (shown to every visitor, every 6 videos, on both desktop and mobile, slot `7463645282` / "XJJ - Break Modal").
 - The break modal's **Continue** button is disabled for 5 seconds (a countdown label shows the remaining time) so its ad slot gets a guaranteed minimum view, similar to a skippable video ad. **Stop** is never gated.
 - The break interval (`GATE_EVERY` in `index.html`) was reduced from every 10 videos to every **6**, increasing how often the ad-bearing break modal appears.
-- **Auto Next defaults to on** and the video **defaults to muted** (both still one click/tap to change) — muted autoplay is reliably allowed by mobile browsers where autoplay-with-sound is often blocked, so this reduces how often a visitor hits a "▶ Tap to play" wall and bounces before any video (or ad break) plays.
+- **Auto Next defaults to on**, and audio starts at a quiet **5% volume** (`DEFAULT_VOLUME` in `index.html`) instead of full mute or full volume. Mobile browsers only allow autoplay when a video starts truly `muted`, so the `<video>` element starts muted in HTML for that reason, then the player automatically drops mute (keeping the low volume) the instant the first video actually begins playing — a standard technique, since changing `muted` after playback has started doesn't re-trigger autoplay restrictions the way starting unmuted would. This reduces how often a visitor hits a "▶ Tap to play" wall and bounces before any video (or ad break) plays, while still being audible rather than silent. The Mute toggle always works normally after that.
 
-These are business/UX tradeoffs, not just technical ones — tune `GATE_EVERY`, `CONTINUE_MIN_DWELL`, and the two defaults in `index.html` if six videos or a 5-second gate turns out to be too aggressive for your audience.
+These are business/UX tradeoffs, not just technical ones — tune `GATE_EVERY`, `CONTINUE_MIN_DWELL`, and `DEFAULT_VOLUME`/`autoNext` in `index.html` if six videos, a 5-second gate, or the volume level turns out to be too aggressive for your audience.
 
 ## Self-hosting notes
 
-If you fork this project for your own deployment, note that `index.html` ships with 51SEC's own ad integrations baked in (Google AdSense/Ezoic and an ad-block-detection overlay), and `compliance.js` loads Google Analytics + Cloudflare Insights under 51SEC's own tracking IDs once a visitor accepts the cookie banner. These are safe to remove or repoint to your own accounts — search for the `<!-- Ad block detection -->` section and the `<script src="compliance.js">` tag in `index.html`, the `ca-pub-...` client ID throughout `index.html`, and the tracking IDs inside `compliance.js`'s `loadAnalyticsScripts()` function. Also replace the two placeholder `data-ad-slot` values described in [Ad monetization](#ad-monetization--watch-time) above.
+If you fork this project for your own deployment, note that `index.html` ships with 51SEC's own ad integrations baked in (Google AdSense/Ezoic and an ad-block-detection overlay), and `compliance.js` loads Google Analytics + Cloudflare Insights under 51SEC's own tracking IDs once a visitor accepts the cookie banner. These are safe to remove or repoint to your own accounts — search for the `<!-- Ad block detection -->` section and the `<script src="compliance.js">` tag in `index.html`, the `ca-pub-...` client ID throughout `index.html`, and the tracking IDs inside `compliance.js`'s `loadAnalyticsScripts()` function. Also replace the two `data-ad-slot` values described in [Ad monetization](#ad-monetization--watch-time) above with your own.
 
 If you fork this for your own deployment, also update the contact details in `legal.html` (currently `dmca@51sec.org` / `https://51sec.org`) to your own — a DMCA contact that doesn't reach you defeats the purpose.
 
@@ -91,13 +90,12 @@ This player streams video content from third-party sources (local playlists you 
 
 To help with that, two files handle compliance concerns separately from the player itself:
 
-- **[`legal.html`](legal.html)** — Terms of Use, age requirement, no-warranty/no-ownership disclaimer, the DMCA takedown procedure with contact info, and the privacy/cookie policy. Reachable from the sidebar footer, the break modal, and the mobile top bar (📄 icon).
+- **[`legal.html`](legal.html)** — Terms of Use, no-warranty/no-ownership disclaimer, the DMCA takedown procedure with contact info, and the privacy/cookie policy. Reachable from the sidebar footer, the break modal, and the mobile top bar (📄 icon).
 - **[`compliance.js`](compliance.js)** — implements, independently of the core player:
-  - an **age-gate interstitial** shown once per browser (tracked via `localStorage`) that must be accepted before the player starts;
   - a **cookie consent banner** that gates Google Analytics and Cloudflare Insights behind an explicit accept/reject choice;
   - a **🚩 Report** button near the video that permanently removes the current video's URL from rotation on that device.
 
-Both files are optional — `index.html` only calls into `compliance.js` via guarded `typeof ... === 'function'` checks, so deleting `compliance.js` (and its `<script>` tag) makes the player start immediately with no gate, banner, or report button. This isn't legal advice, and none of it eliminates the underlying question of whether you have rights to redistribute the content your configured sources return — consult a lawyer for an actual compliance determination if you're deploying this publicly.
+Both files are optional — `index.html` only calls into `compliance.js` via guarded `typeof ... === 'function'` checks, so deleting `compliance.js` (and its `<script>` tag) makes the player start immediately with no banner or report button. This isn't legal advice, and none of it eliminates the underlying question of whether you have rights to redistribute the content your configured sources return — consult a lawyer for an actual compliance determination if you're deploying this publicly.
 
 ## Author & Copyright
 

@@ -4,13 +4,11 @@
  * Copyright (c) 2026 NetSec (https://51sec.org). Licensed under the MIT
  * License — see LICENSE in this repository.
  *
- * Adds three things to index.html, independently of the core player logic:
+ * Adds two things to index.html, independently of the core player logic:
  *
- *   1. An age-gate / content disclaimer interstitial, shown once per
- *      browser, that must be accepted before the player starts.
- *   2. A cookie/tracking consent banner that gates Google Analytics and
+ *   1. A cookie/tracking consent banner that gates Google Analytics and
  *      Cloudflare Insights behind an explicit accept/reject choice.
- *   3. A per-video "🚩 Report" button that permanently removes the
+ *   2. A per-video "🚩 Report" button that permanently removes the
  *      current video's URL from rotation (persisted in localStorage),
  *      independent of the automatic failover already built into the
  *      player for broken/stalled links.
@@ -21,16 +19,14 @@
  * This file is optional: index.html's own script only calls the hooks
  * below if they exist (`typeof initComplianceGate === 'function'`, etc.),
  * so removing this file (and its <script> tag) makes the player start
- * immediately with no gate, banner, or report button. See README.md
- * "Self-hosting notes" before removing it, though — the age-gate and
- * report button are there to reduce real content-moderation/compliance
- * risk, not just to look nice.
+ * immediately with no banner or report button. See README.md
+ * "Self-hosting notes" before removing it, though — the report button is
+ * there to reduce real content-moderation risk, not just to look nice.
  */
 (function () {
   'use strict';
 
   var STORAGE = {
-    AGE_GATE: 'xjj-agegate-accepted',
     CONSENT:  'xjj-consent',   // 'accepted' | 'rejected'
     REPORTED: 'xjj-reported-urls',
   };
@@ -60,44 +56,9 @@
   function injectStyles() {
     var style = document.createElement('style');
     style.textContent = [
-      '#xjj-agegate, #xjj-consent-banner, #xjj-report-btn { box-sizing: border-box; }',
-      '#xjj-agegate *, #xjj-consent-banner * { box-sizing: border-box; }',
-      '#xjj-agegate {',
-      '  position: fixed; inset: 0; z-index: 999999;',
-      '  background: rgba(4,4,12,0.88); backdrop-filter: blur(6px);',
-      '  display: flex; align-items: center; justify-content: center;',
-      '  padding: 24px; font-family: var(--font-body, sans-serif);',
-      '}',
-      '#xjj-agegate .box {',
-      '  background: var(--surface, #12121f); color: var(--text, #f0eeff);',
-      '  border: 1px solid var(--border-2, rgba(255,255,255,0.12));',
-      '  border-radius: 16px; padding: 28px 26px; max-width: 440px;',
-      '  width: 100%; max-height: 86vh; overflow-y: auto;',
-      '  box-shadow: 0 32px 80px rgba(0,0,0,0.6);',
-      '}',
-      '#xjj-agegate h2 {',
-      '  font-size: 1.05rem; margin-bottom: 12px;',
-      '  font-family: var(--font-display, sans-serif);',
-      '}',
-      '#xjj-agegate p {',
-      '  font-size: 0.82rem; line-height: 1.6;',
-      '  color: var(--text-muted, rgba(240,238,255,0.7)); margin-bottom: 12px;',
-      '}',
-      '#xjj-agegate a, #xjj-consent-banner a { color: var(--accent2, #00e5c8); }',
-      '#xjj-agegate .decline-notice {',
-      '  color: var(--accent, #ff4d6d); font-weight: 600; display: none;',
-      '}',
-      '#xjj-agegate .decline-notice.show { display: block; }',
-      '#xjj-agegate .actions { display: flex; gap: 10px; margin-top: 18px; }',
-      '#xjj-agegate button {',
-      '  flex: 1; padding: 12px 0; border-radius: 10px; border: 1px solid transparent;',
-      '  font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit;',
-      '}',
-      '#xjj-agegate .btn-agree { background: var(--accent, #ff4d6d); color: #fff; }',
-      '#xjj-agegate .btn-decline {',
-      '  background: transparent; border-color: var(--border-2, rgba(255,255,255,0.2));',
-      '  color: var(--text-muted, #ccc);',
-      '}',
+      '#xjj-consent-banner, #xjj-report-btn { box-sizing: border-box; }',
+      '#xjj-consent-banner * { box-sizing: border-box; }',
+      '#xjj-consent-banner a { color: var(--accent2, #00e5c8); }',
       '#xjj-consent-banner {',
       '  position: fixed; left: 0; right: 0; bottom: 0; z-index: 900000;',
       '  background: var(--surface, #12121f); color: var(--text, #f0eeff);',
@@ -133,63 +94,7 @@
   }
 
   // ---------------------------------------------------------------------
-  // 1. Age-gate / content disclaimer interstitial
-  // ---------------------------------------------------------------------
-  function buildAgeGate(onAccept) {
-    var declineNotice = el('p', {
-      class: 'decline-notice',
-      text: 'You must accept to use this site.',
-    });
-
-    var box = el('div', { class: 'box' }, [
-      el('h2', { text: '18+ Content Disclaimer' }),
-      el('p', { html:
-        'This app plays video content pulled live from third-party sources ' +
-        '(playlists and/or community API endpoints). We do not host, produce, ' +
-        'pre-screen, or endorse this content, and it may be unpredictable or ' +
-        'unsuitable for minors.'
-      }),
-      el('p', { html:
-        'By continuing, you confirm you are at least 18 years old (or the age ' +
-        'of majority where you live) and agree to our ' +
-        '<a href="' + LEGAL_URL + '" target="_blank" rel="noopener">Terms of Use &amp; DMCA Policy</a>.'
-      }),
-      declineNotice,
-    ]);
-
-    var agreeBtn   = el('button', { class: 'btn-agree', type: 'button', text: 'I Agree — Enter' });
-    var declineBtn = el('button', { class: 'btn-decline', type: 'button', text: 'Decline' });
-    box.appendChild(el('div', { class: 'actions' }, [declineBtn, agreeBtn]));
-
-    var overlay = el('div', {
-      id: 'xjj-agegate',
-      role: 'dialog',
-      'aria-modal': 'true',
-      'aria-label': 'Content disclaimer',
-    }, [box]);
-
-    agreeBtn.addEventListener('click', function () {
-      safeSet(STORAGE.AGE_GATE, '1');
-      overlay.remove();
-      onAccept();
-    });
-    declineBtn.addEventListener('click', function () {
-      declineNotice.classList.add('show');
-    });
-
-    document.body.appendChild(overlay);
-  }
-
-  function initAgeGate(onReady) {
-    if (safeGet(STORAGE.AGE_GATE) === '1') {
-      onReady();
-      return;
-    }
-    buildAgeGate(onReady);
-  }
-
-  // ---------------------------------------------------------------------
-  // 2. Cookie / tracking consent banner
+  // 1. Cookie / tracking consent banner
   // ---------------------------------------------------------------------
   function loadAnalyticsScripts() {
     var cf = document.createElement('script');
@@ -239,7 +144,7 @@
   }
 
   // ---------------------------------------------------------------------
-  // 3. Per-video report / permanent blocklist
+  // 2. Per-video report / permanent blocklist
   // ---------------------------------------------------------------------
   function loadReportedUrls() {
     try {
@@ -322,9 +227,7 @@
   window.initComplianceGate = function (startApp) {
     injectStyles();
     injectReportButton();
-    initAgeGate(function () {
-      startApp();
-      initConsentBanner();
-    });
+    startApp();
+    initConsentBanner();
   };
 })();
