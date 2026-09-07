@@ -1892,7 +1892,12 @@ function syncControlUI() {
   autoBtn.textContent = 'Auto: ' + (state.autoNext ? 'ON' : 'OFF');
   autoBtn.classList.toggle('btn-active', state.autoNext);
 
-  syncMuteUI();
+  // Mute is intentionally NOT synced here: at this point the <video> is
+  // still `muted` (required for autoplay), which would flash the toggle
+  // to "ON" before the auto-unmute-on-playing logic flips it back off a
+  // moment later. The HTML default (unchecked / "Mute: OFF") already
+  // matches the intended default, and the 'playing'/'pause' listeners
+  // call syncMuteUI() once the real state is actually settled.
 }
 
 function startApp() {
