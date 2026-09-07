@@ -1210,8 +1210,12 @@ body::before {
      Loaded before the main script below so its `initComplianceGate` hook
      is defined in time; see legal.html for the Terms of Use / DMCA /
      Privacy policy it links to. Optional — remove this tag and index.html
-     falls back to starting immediately. -->
-<script src="compliance.js"></script>
+     falls back to starting immediately.
+     The ?v= query string is manual cache-busting — bump it whenever
+     compliance.js changes, since it has no build step to hash its
+     filename and browsers/CDNs can otherwise keep serving a stale
+     cached copy after a deploy. -->
+<script src="compliance.js?v=2"></script>
 
 <!-- ================================================================
      JAVASCRIPT

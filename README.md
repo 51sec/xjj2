@@ -95,6 +95,8 @@ If you fork this project for your own deployment, note that `index.html` ships w
 
 If you fork this for your own deployment, also update the contact details in `legal.html` (currently `dmca@51sec.org` / `https://51sec.org`) to your own — a DMCA contact that doesn't reach you defeats the purpose.
 
+`compliance.js` is loaded with a manual cache-busting query string (`<script src="compliance.js?v=2">` in `index.html`) since this project has no build step to hash its filename — bump that `?v=` number whenever you edit `compliance.js`, or browsers/CDNs can keep serving visitors a stale cached copy after you deploy a fix.
+
 ## Compliance & content disclaimer
 
 This player streams video content from third-party sources (local playlists you supply, and/or the community API endpoints pre-configured in `SOURCES`). The project does not host, produce, moderate, or claim ownership of that third-party content. If you deploy this app publicly, you are responsible for the content your chosen sources return and for complying with applicable copyright, content, and platform policies in your jurisdiction.
