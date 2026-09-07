@@ -875,7 +875,12 @@ body::before {
 }
 .gate-ad-slot {
   width: 100%;
-  margin-bottom: 16px;
+  /* Real spacing from the Stop/Continue buttons right below, not just a
+     thin gap — Google's own ad-unit click protection (this creative's
+     data-ifc-map shows "confirmedClickAdUnitProtection") requires extra
+     margin from other interactive controls, or a click near it just
+     "confirms" instead of navigating on the first try. */
+  margin-bottom: 44px;
   position: relative; z-index: 1;
   display: flex;
   flex-direction: column;
@@ -1058,20 +1063,6 @@ body::before {
 
     <hr class="sidebar-divider">
 
-    <div id="sidebar-ad-space">
-      <!-- xjj-sidebar — fixed 160x300 instead of responsive/auto: a
-           responsive slot let Google serve an oversized skyscraper-style
-           creative that pushed the rest of the sidebar off-screen. A fixed
-           size constrains what can be served here. -->
-      <ins class="adsbygoogle"
-           style="display:inline-block; width:160px; height:300px;"
-           data-ad-client="ca-pub-5660349373091698"
-           data-ad-slot="2402890298"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-    </div>
-
-    <hr class="sidebar-divider">
-
     <div class="sidebar-section-label">Playback</div>
     <div class="toggle-grid">
       <div class="toggle-row">
@@ -1127,6 +1118,32 @@ body::before {
         </select>
       </div>
       <button class="nav-arrow-btn" onclick="addCustomSource()">＋&nbsp;&nbsp;Add Source</button>
+    </div>
+
+    <hr class="sidebar-divider">
+
+    <div id="sidebar-ad-space" style="margin-top: 24px;">
+      <!-- xjj-sidebar — auto/responsive size, at the bottom of the sidebar.
+           margin-top gives it real breathing room from the Add Source
+           button above: Google's own ad-unit click protection (visible in
+           this creative's data-ifc-map="confirmedClickAdUnitProtection")
+           requires a first "confirming" click near other interactive
+           controls before a click actually navigates — likely why ad
+           clicks weren't working. Keep genuine spacing from buttons/toggles
+           here, not just a thin divider.
+           Note: an auto-sized unit is what previously let Google serve an
+           expandable creative that rendered as a viewport overlay across the
+           video; position in the page did not prevent that. Kept auto here
+           by request — if that overlay behavior returns, switching this back
+           to a fixed size (e.g. width:160px; height:300px) is the mitigation
+           that held up before. -->
+      <ins class="adsbygoogle"
+           style="display:block; width:100%;"
+           data-ad-client="ca-pub-5660349373091698"
+           data-ad-slot="2402890298"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
   </nav>
 
@@ -1694,6 +1711,46 @@ function toggleFullscreen() {
     (el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen)?.call(el);
   }
 }
+
+// Keyboard shortcuts only fire when keyboard focus is inside this
+// document. Ad iframes can take focus — e.g. once a visitor clicks an ad —
+// and from then on every keystroke goes to that iframe and never reaches
+// this document's keydown listener, which looks exactly like "the shortcuts
+// stopped working". Nothing here ever gave focus back, so it stayed broken
+// until a reload. So: claim focus on load, reclaim it when the visitor
+// interacts with our own UI, and take it back if an iframe grabs it.
+// Note this only moves *keyboard* focus — it doesn't hide an ad, resize it,
+// or affect whether it can be clicked or viewed.
+function claimKeyboardFocus() {
+  const el = document.activeElement;
+  if (el && el.tagName === 'IFRAME') el.blur();
+  if (document.body && document.activeElement !== document.body) {
+    document.body.focus({ preventScroll: true });
+  }
+}
+
+// body isn't focusable by default; -1 makes it programmatically focusable
+// without adding it to the tab order.
+document.body.tabIndex = -1;
+claimKeyboardFocus();
+
+// Clicking our own UI puts focus back — but don't yank it out of form
+// fields, buttons, links, or an ad the visitor is actually interacting with.
+document.addEventListener('pointerdown', e => {
+  if (e.target.closest('ins.adsbygoogle, input, select, textarea, button, a')) return;
+  claimKeyboardFocus();
+});
+
+// Focus leaving the top document: if it went into an iframe (rather than
+// the visitor switching tabs/apps, where activeElement stays put), take it
+// back shortly after, so an ad click doesn't permanently disable shortcuts.
+window.addEventListener('blur', () => {
+  setTimeout(() => {
+    if (document.activeElement && document.activeElement.tagName === 'IFRAME') {
+      claimKeyboardFocus();
+    }
+  }, 500);
+});
 
 document.addEventListener('keydown', e => {
   if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
