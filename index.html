@@ -1134,7 +1134,7 @@ const SOURCES = [
 const MAX_API_RETRIES     = 5;
 const PAUSE_AUTO_CONTINUE = 60; // seconds of inactivity before the break modal auto-continues
 const PAUSE_START_SECONDS = 5;  // first image-change countdown in the break modal
-const DEFAULT_VOLUME      = 0.05; // quiet-but-audible autoplay instead of fully silent
+const DEFAULT_VOLUME      = 0.2; // quiet-but-audible autoplay instead of fully silent
 
 const state = {
   sourceId:     1,
@@ -1624,7 +1624,7 @@ function buildSourceButtons() {
 }
 
 // ── PAUSE MODAL (ported from mm) ────────────────────────────────
-const GATE_EVERY = 6; // ad-supported: breaks (and the ad slot in them) show more often
+const GATE_EVERY = 8; // ad-supported: breaks (and the ad slot in them) show more often
 const PIC_API    = 'https://www.cunshao.com/666666/api/pic.php';
 const CONTINUE_MIN_DWELL = 5; // seconds Continue stays disabled so the gate's ad gets a real view
 
