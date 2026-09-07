@@ -1129,12 +1129,14 @@ const SOURCES = [
   { id: 8, label: 'NRZJ Video 2',   type: 'api',                  url: 'http://video.nrzj.vip/video.php'                    },
   { id: 9, label: 'NRZJ TikTok 2',  type: 'api',                  url: 'http://video.nrzj.vip/tiktok/video.php'             },
   { id:10, label: 'PF129',          type: 'api-fetch',            url: 'https://netsec.alwaysdata.net/proxy.php?src=https%3A%2F%2Fpf129.com%2Fxjj%2Fget%2Fget1.php' },
+  { id:11, label: 'WPON Girl',      type: 'api-fetch',            url: 'https://tucdn.wpon.cn/api-girl/index.php?wpon=url' },
 ];
 
 const MAX_API_RETRIES     = 5;
 const PAUSE_AUTO_CONTINUE = 60; // seconds of inactivity before the break modal auto-continues
 const PAUSE_START_SECONDS = 5;  // first image-change countdown in the break modal
 const DEFAULT_VOLUME      = 0.2; // quiet-but-audible autoplay instead of fully silent
+const DEFAULT_SOURCE_ID   = 4;   // CunShao Web — fastest source per manual timing tests
 
 const state = {
   sourceId:     1,
@@ -1254,7 +1256,10 @@ function playCurrentVideo() {
     fetch(fetchUrl)
       .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
       .then(text => {
-        const mp4url = text.trim();
+        let mp4url = text.trim();
+        // Some APIs return a protocol-relative URL (e.g. "//host/path.mp4")
+        // instead of a full "https://..." one — normalize before validating.
+        if (mp4url.startsWith('//')) mp4url = 'https:' + mp4url;
         if (!mp4url || !mp4url.startsWith('http')) throw new Error('Invalid URL returned');
         showOverlay('Loading…');
         video.src  = mp4url;
@@ -1724,7 +1729,7 @@ function startApp() {
   applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
   syncControlUI();
   buildSourceButtons();
-  loadSource(SOURCES[0].id);
+  loadSource(DEFAULT_SOURCE_ID);
 }
 
 // If compliance.js is present, it starts the app itself (after wiring up

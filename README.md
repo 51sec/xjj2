@@ -66,6 +66,8 @@ const SOURCES = [
 
 You can also add a source at runtime without editing the file — use the "Custom Source" form in the sidebar (desktop) or the "+" button in the top bar (mobile), pick the source type, and paste the URL.
 
+The source loaded on startup is controlled by `DEFAULT_SOURCE_ID` in `index.html` (currently `4`, "CunShao Web") rather than always being the first item in `SOURCES` — manual timing tests found it the fastest and most consistent of the pre-configured API sources (~0.5s time-to-first-byte vs. 0.7–2s for the others). "NRZJ Video 2" (id `8`) was the slowest and least consistent in the same testing (one run took 8.4s) and may be worth dropping if reliability matters more than having an extra option.
+
 ## Ad monetization & watch-time
 
 The player is tuned to maximize ad exposure and session length:
