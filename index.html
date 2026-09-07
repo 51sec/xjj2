@@ -640,7 +640,7 @@ body::before {
 /* Video counter */
 #video-counter {
   position: absolute;
-  top: 16px; right: 16px;
+  top: 16px; left: 16px;
   background: rgba(8,8,16,0.6);
   backdrop-filter: blur(8px);
   border: 1px solid var(--border);
@@ -657,8 +657,8 @@ body::before {
 /* Video title */
 #video-title {
   position: absolute;
-  top: 16px; left: 16px;
-  max-width: calc(100% - 160px);
+  top: 50px; left: 16px;
+  max-width: min(60%, 320px);
   background: rgba(8,8,16,0.6);
   backdrop-filter: blur(8px);
   border: 1px solid var(--border);
@@ -1213,7 +1213,6 @@ const SOURCES = [
 ];
 
 const MAX_API_RETRIES     = 5;
-const PAUSE_AUTO_CONTINUE = 60; // seconds of inactivity before the break modal auto-continues
 const PAUSE_START_SECONDS = 5;  // first image-change countdown in the break modal
 const DEFAULT_VOLUME      = 0.2; // quiet-but-audible autoplay instead of fully silent
 const DEFAULT_SOURCE_ID   = 4;   // CunShao Web — fastest source per manual timing tests
@@ -1235,7 +1234,6 @@ const state = {
   pauseCountdown:    0,
   pauseCycle:        0,
   pauseDuration:     0,
-  pauseElapsed:      0,
   _countedThisLoad:  false,
   _autoUnmuted:      false,
 };
@@ -1712,7 +1710,32 @@ function buildSourceButtons() {
 const GATE_EVERY = 8; // periodic break to encourage mindful viewing
 const PIC_API    = 'https://www.cunshao.com/666666/api/pic.php';
 const CONTINUE_MIN_DWELL = 5; // seconds Continue stays disabled so the gate's ad gets a real view
+const PHOTO_CAP        = 15; // auto-continue once this many photos have been shown
+const AD_REFRESH_EVERY = 3;  // re-request the break-modal ad every N photo changes
 let breakAdPushed = false; // push the modal's <ins> only once, and only once it's actually visible
+
+// Re-requests the break-modal ad while the modal stays open. AdSense errors
+// ("already have ads in this slot") if you push() the same filled <ins>
+// again, so this removes it and appends a fresh one with identical
+// attributes before pushing — the standard technique for manual ad
+// refresh. Only called while the modal is already visible (from within
+// showPauseModal()'s interval), so there's no display:none sizing issue
+// here the way there is for the very first push.
+function refreshBreakAd() {
+  const container = document.getElementById('gate-ad-slot');
+  if (!container) return;
+  const oldIns = container.querySelector('ins.adsbygoogle');
+  if (oldIns) oldIns.remove();
+  const ins = document.createElement('ins');
+  ins.className = 'adsbygoogle';
+  ins.style.display = 'inline-block';
+  ins.style.width = '336px';
+  ins.style.height = '280px';
+  ins.setAttribute('data-ad-client', 'ca-pub-5660349373091698');
+  ins.setAttribute('data-ad-slot', '7463645282');
+  container.appendChild(ins);
+  (window.adsbygoogle = window.adsbygoogle || []).push({});
+}
 
 function checkPauseGate() {
   if (state.videoCount >= GATE_EVERY) {
@@ -1734,23 +1757,24 @@ function showPauseModal() {
   // Load fresh image
   document.getElementById('gate-img').src = PIC_API + '?' + Date.now();
   // First countdown is short, then each image change grows the wait by (2 + cycle count):
-  // 5s, then +3 -> 8s, then +4 -> 12s, then +5 -> 17s, ...
+  // 5s, then +3 -> 8s, then +4 -> 12s, then +5 -> 17s, ... Auto-continues once
+  // PHOTO_CAP photos have been shown (~14 min total at the default of 15),
+  // and refreshes the ad every AD_REFRESH_EVERY photo changes along the way.
   state.pauseCycle     = 0;
   state.pauseDuration  = PAUSE_START_SECONDS;
   state.pauseCountdown = state.pauseDuration;
-  state.pauseElapsed   = 0;
   document.getElementById('gate-timer').textContent = 'New image in ' + state.pauseCountdown + 's';
   state.pauseTimer = setInterval(() => {
     state.pauseCountdown--;
-    state.pauseElapsed++;
-    if (state.pauseElapsed >= PAUSE_AUTO_CONTINUE) { gateContinue(); return; }
-    document.getElementById('gate-timer').textContent = 'New image in ' + state.pauseCountdown + 's';
     if (state.pauseCountdown <= 0) {
-      document.getElementById('gate-img').src = PIC_API + '?' + Date.now();
       state.pauseCycle++;
+      if (state.pauseCycle >= PHOTO_CAP) { gateContinue(); return; }
+      document.getElementById('gate-img').src = PIC_API + '?' + Date.now();
+      if (state.pauseCycle % AD_REFRESH_EVERY === 0) refreshBreakAd();
       state.pauseDuration += (2 + state.pauseCycle);
       state.pauseCountdown = state.pauseDuration;
     }
+    document.getElementById('gate-timer').textContent = 'New image in ' + state.pauseCountdown + 's';
   }, 1000);
 
   // Give the ad slot in this modal a minimum guaranteed view before Continue
@@ -1836,12 +1860,13 @@ if (typeof initComplianceGate === 'function') {
       <img id="gate-img" src="" alt="Preview">
     </div>
     <div class="gate-timer" id="gate-timer">New image in 5s</div>
-    <div class="gate-ad-slot">
+    <div class="gate-ad-slot" id="gate-ad-slot">
       <!-- XJJ - Break Modal — fixed 336x280 (IAB "large rectangle"). Ad
            push() is NOT called here: this modal starts display:none, and
            pushing while hidden (0x0 size) makes AdSense fail the slot
            permanently, even after it becomes visible. It's pushed lazily
-           from showPauseModal() instead, the first time the modal opens. -->
+           from showPauseModal() instead, the first time the modal opens,
+           and re-pushed periodically by refreshBreakAd() (see script). -->
       <ins id="gate-ad-ins" class="adsbygoogle"
            style="display:inline-block; width:336px; height:280px;"
            data-ad-client="ca-pub-5660349373091698"
