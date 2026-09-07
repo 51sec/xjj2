@@ -81,7 +81,7 @@
       '}',
       '#xjj-consent-banner .btn-accept { background: var(--accent, #ff4d6d); border-color: transparent; color: #fff; }',
       '#xjj-report-btn {',
-      '  position: absolute; top: 60px; right: 16px; z-index: 20;',
+      '  position: absolute; top: 84px; left: 16px; z-index: 20;',
       '  background: rgba(8,8,16,0.6); backdrop-filter: blur(8px);',
       '  border: 1px solid var(--border, rgba(255,255,255,0.07));',
       '  color: var(--text-muted, rgba(240,238,255,0.7));',

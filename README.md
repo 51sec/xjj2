@@ -13,6 +13,7 @@ A single-file HTML5 video player that streams videos from local lists (`.txt`/`.
   - Local playlist files — plain-text (`videos.txt`, one URL per line) or JSON (`videos.json`, array of URL strings or `{url, title}` objects)
   - Live API sources that return a direct video URL or stream (`api` / `api-fetch` types), including several pre-configured community endpoints
 - **Random start & sequential playback** — playlists start at a random video, then move forward/back in order.
+- **1-second startup pause** — the very first video, right when the page loads, waits 1 second before playing. Every later video (Next/Prev/Auto Next, source switches) plays immediately with no delay.
 - **Auto Next / Loop / Mute toggles** — auto-advance to the next video on end, loop the current video indefinitely, or mute audio, from the sidebar (desktop) or bottom bar (mobile). Auto Next is **on** by default, and audio starts at a quiet **20% volume** rather than fully muted or full blast (see [Ad monetization](#ad-monetization--watch-time) below) — both are one click/tap to change.
 - **Dark / Light theme toggle** — switch instantly, remembered across visits via `localStorage`, with no flash of the wrong theme on reload.
 - **Add your own source at runtime** — paste a `.txt`/`.json` playlist URL or an API endpoint directly into the UI (desktop sidebar or the mobile "+" panel) to add it to the source list without touching the code.

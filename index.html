@@ -1236,6 +1236,7 @@ const state = {
   pauseDuration:     0,
   _countedThisLoad:  false,
   _autoUnmuted:      false,
+  _isFirstPlay:      true, // only the very first video (page load) gets a startup pause; every later switch plays immediately
 };
 
 function activeSource() {
@@ -1318,6 +1319,23 @@ async function loadSource(id) {
   }
 }
 
+// Starts playback, pausing 1 second first only for the very first video
+// since the page loaded — every later video (Next/Prev/Auto Next, source
+// switches, etc.) plays immediately, unchanged.
+function startPlayback() {
+  const doPlay = () => video.play().catch(() => {
+    clearTimeout(state.stalledTimer);
+    hideOverlay();
+    showOverlay('▶ Tap to play');
+  });
+  if (state._isFirstPlay) {
+    state._isFirstPlay = false;
+    setTimeout(doPlay, 1000);
+  } else {
+    doPlay();
+  }
+}
+
 function playCurrentVideo() {
   const src = activeSource();
   state.skipCount = 0;
@@ -1348,7 +1366,7 @@ function playCurrentVideo() {
           showOverlay('⚠ Timed out — press PASS to retry');
           showToast('Timed out');
         }, 10000);
-        video.play().catch(() => { clearTimeout(state.stalledTimer); hideOverlay(); showOverlay('▶ Tap to play'); });
+        startPlayback();
       })
       .catch(err => {
         showOverlay('⚠ ' + err.message + ' — press PASS to retry');
@@ -1371,7 +1389,7 @@ function playCurrentVideo() {
       showOverlay('⚠ API timed out — press PASS to retry');
       showToast('API timed out');
     }, 10000);
-    video.play().catch(() => { clearTimeout(state.stalledTimer); hideOverlay(); showOverlay('▶ Tap to play'); });
+    startPlayback();
     return;
   }
 
@@ -1400,7 +1418,7 @@ function playCurrentVideo() {
     if (overlay.classList.contains('hidden')) return;
     markBadAndSkip('Timed out');
   }, 8000);
-  video.play().catch(() => { clearTimeout(state.stalledTimer); hideOverlay(); showOverlay('▶ Tap to play'); });
+  startPlayback();
 }
 
 function setVideoTitle(text) {
