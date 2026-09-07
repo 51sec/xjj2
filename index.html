@@ -1262,6 +1262,7 @@ const state = {
   pauseDuration:     0,
   _countedThisLoad:  false,
   _autoUnmuted:      false,
+  _justUnmuted:      false,
   _isFirstPlay:      true, // only the very first video (page load) gets a startup pause; every later switch plays immediately
 };
 
@@ -1537,13 +1538,29 @@ video.addEventListener('playing',  () => {
   // The video starts `muted` (in the HTML) so mobile browsers reliably
   // autoplay it; once playback has actually started, drop mute in favor of
   // the quiet DEFAULT_VOLUME instead of staying fully silent. Changing
-  // `muted` after playback begins doesn't re-trigger autoplay restrictions,
-  // unlike calling play() unmuted from the start would. Only happens once —
-  // after that, the Mute toggle is the user's own choice to respect.
+  // `muted` after playback begins doesn't re-trigger autoplay restrictions
+  // in most browsers/sessions, unlike calling play() unmuted from the
+  // start would — but some browsers, when the visitor has no prior media
+  // engagement with the site, reject even this and PAUSE the video instead
+  // of just leaving it muted (confirmed via headless Chrome testing: "Unmuting
+  // failed and the element was paused instead"). The 'pause' listener below
+  // detects that specific case and reverts to muted + resumes playback,
+  // since "plays, but silent" must always win over "stopped entirely".
+  // Only attempted once — after that, the Mute toggle is the user's choice.
   if (!state._autoUnmuted) {
     state._autoUnmuted = true;
+    state._justUnmuted = true;
+    setTimeout(() => { state._justUnmuted = false; }, 500);
     video.muted = false;
     syncMuteUI();
+  }
+});
+video.addEventListener('pause', () => {
+  if (state._justUnmuted) {
+    state._justUnmuted = false;
+    video.muted = true;
+    syncMuteUI();
+    video.play().catch(() => { showOverlay('▶ Tap to play'); });
   }
 });
 video.addEventListener('waiting',  () => {
