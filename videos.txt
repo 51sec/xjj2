@@ -1,3 +1,6 @@
+# XJJ Video Player — Author: NetSec — Website: https://51sec.org
+# Copyright (c) 2026 NetSec (https://51sec.org) — MIT License
+# https://github.com/51sec/xjj2
 https://txmov2.a.yximgs.com/upic/2019/04/27/16/BMjAxOTA0MjcxNjIyMDBfMTMwNjg3NTUwOV8xMjU0ODUyNTg5NV8xXzM=_b_Be1e14f745983b2a361693572a235b28c.mp4
 https://bdmov.a.yximgs.com/upic/2019/04/17/20/BMjAxOTA0MTcyMDQxMDVfMTMwNzYwOTY2NV8xMjI4MDUxMTk5Nl8xXzM=_b_B9955d32d1b344648b4cb776fa20e2db4.mp4?tag=1-1560272200-p-0-btdwhczwvm-a00b4968c78b2318
 https://jsmov2.a.yximgs.com/upic/2019/12/14/12/BMjAxOTEyMTQxMjU5NTNfNzUxNTQzODM1XzIwNDkyNzc3NTY1XzFfMw==_b_B425d39ce3ad8e78e53fb52b31039e91f.mp4

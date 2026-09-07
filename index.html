@@ -1,14 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!--
+  ============================================================================
+  XJJ Video Player
+
+  Author:     NetSec
+  Website:    https://51sec.org
+  Copyright:  (c) 2026 NetSec (https://51sec.org). All rights reserved
+              except as explicitly granted below.
+
+  Licensed under the MIT License. You may use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of this software, provided that
+  the above copyright notice and this permission notice are retained in all
+  copies or substantial portions of the software.
+  This software is provided "AS IS", without warranty of any kind.
+
+  Full license text: LICENSE (in this repository)
+  Source:            https://github.com/51sec/xjj2
+  ============================================================================
+-->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="author" content="NetSec">
+<meta name="copyright" content="Copyright (c) 2026 NetSec (https://51sec.org)">
+<link rel="author" href="https://51sec.org">
 <meta name="yandex-verification" content="4b3a94e9e2c57992" />
 <script src="https://quge5.com/88/tag.min.js" data-zone="218711" async data-cfasync="false"></script>
 <title>XJJ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+// Applied before first paint so switching pages / reloading never flashes the wrong theme.
+(function() {
+  try {
+    var saved = localStorage.getItem('xjj-theme');
+    document.documentElement.setAttribute('data-theme', saved === 'light' ? 'light' : 'dark');
+  } catch (e) {}
+})();
+</script>
 <style>
 /* =====================================================================
    XJJ – Redesigned Video Player
@@ -36,6 +67,23 @@
   --font-display: 'Syne', sans-serif;
   --font-body:    'DM Sans', sans-serif;
   --font-mono:    'DM Mono', monospace;
+}
+
+:root[data-theme="light"] {
+  --bg:          #f4f3fa;
+  --surface:     #ffffff;
+  --surface-2:   #eeecf7;
+  --border:      rgba(20,15,40,0.08);
+  --border-2:    rgba(20,15,40,0.14);
+  --accent:      #e8395a;
+  --accent-dim:  rgba(232,57,90,0.10);
+  --accent2:     #00a693;
+  --accent2-dim: rgba(0,166,147,0.10);
+  --text:        #17142a;
+  --text-muted:  rgba(23,20,42,0.55);
+  --text-subtle: rgba(23,20,42,0.35);
+  --btn-bg:      rgba(20,15,40,0.05);
+  --btn-hover:   rgba(20,15,40,0.09);
 }
 
 html, body {
@@ -124,7 +172,7 @@ body::before {
   display: none;
   position: absolute;
   left: 0;
-  background: #12121f;
+  background: var(--surface-2);
   border: 1px solid var(--border-2);
   border-radius: var(--radius);
   overflow: hidden;
@@ -342,6 +390,30 @@ body::before {
   box-shadow: 0 4px 20px rgba(255,77,109,0.2);
 }
 
+/* Custom source form */
+.custom-source-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+.custom-source-input,
+.custom-source-select {
+  width: 100%;
+  background: var(--btn-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 9px 10px;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  outline: none;
+}
+.custom-source-input::placeholder { color: var(--text-subtle); }
+.custom-source-input:focus,
+.custom-source-select:focus { border-color: var(--accent); }
+.custom-source-select { cursor: pointer; }
+
 /* Sidebar copyright */
 .sidebar-copyright {
   margin-top: auto;
@@ -355,7 +427,28 @@ body::before {
   text-align: center;
   line-height: 1.7;
   letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
+.github-link {
+  display: inline-flex;
+  color: var(--text-subtle);
+  transition: color 0.15s, transform 0.15s;
+}
+.github-link:hover { color: var(--text); transform: scale(1.1); }
+.github-link svg { width: 14px; height: 14px; }
+.disclaimer-text {
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  color: var(--text-subtle);
+  text-align: center;
+  line-height: 1.5;
+  margin-top: 8px;
+}
+.disclaimer-text a { color: var(--text-muted); text-decoration: underline; }
+.disclaimer-text a:hover { color: var(--accent); }
 
 /* ── VIDEO AREA ─────────────────────────────────────────────── */
 #video-area {
@@ -475,6 +568,7 @@ body::before {
   display: flex;
   gap: 10px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 .mobile-btn {
   background: rgba(14,14,26,0.8);
@@ -519,6 +613,28 @@ body::before {
   pointer-events: none;
   letter-spacing: 0.5px;
 }
+
+/* Video title */
+#video-title {
+  position: absolute;
+  top: 16px; left: 16px;
+  max-width: calc(100% - 160px);
+  background: rgba(8,8,16,0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  z-index: 20;
+  pointer-events: none;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#video-title.hidden { display: none; }
 
 /* Toast */
 #toast {
@@ -565,6 +681,20 @@ body::before {
   letter-spacing: 0.3px;
 }
 
+/* Custom source panel (mobile topbar) */
+.mobile-custom-source-panel {
+  display: none;
+  position: fixed;
+  top: 56px; left: 0; right: 0; z-index: 99;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-2);
+  padding: 14px 18px;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+}
+.mobile-custom-source-panel.open { display: flex; }
+
 /* ── RESPONSIVE ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
   #sidebar    { display: none !important; }
@@ -572,6 +702,8 @@ body::before {
   #mobile-controls { display: flex; }
   #shortcuts  { display: none; }
   #main-video { height: 100%; object-fit: cover; width: 100%; }
+  /* 16px avoids iOS Safari auto-zooming the page when these inputs gain focus */
+  .custom-source-input, .custom-source-select { font-size: 16px; }
 }
 
 /* ── PAUSE MODAL ─────────────────────────────────────────────────── */
@@ -597,12 +729,14 @@ body::before {
   padding: 30px 28px 26px;
   max-width: 460px;
   width: calc(100vw - 40px);
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   box-shadow:
     0 32px 80px rgba(0,0,0,0.7),
     0 0 0 1px rgba(255,77,109,0.12),
     inset 0 1px 0 rgba(255,255,255,0.06);
   animation: slideUpBox 0.35s cubic-bezier(0.34,1.4,0.64,1);
-  overflow: hidden;
 }
 .gate-box::before {
   content: '';
@@ -663,6 +797,20 @@ body::before {
   letter-spacing: 0.4px;
   position: relative; z-index: 1;
 }
+.gate-ad-slot {
+  width: 100%;
+  margin-bottom: 16px;
+  position: relative; z-index: 1;
+}
+.ad-label {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  color: var(--text-subtle);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 6px;
+}
 .gate-actions { display: flex; gap: 10px; width: 100%; margin-bottom: 20px; }
 .gate-btn {
   flex: 1; padding: 13px 0; border-radius: 12px;
@@ -681,6 +829,12 @@ body::before {
   box-shadow: 0 4px 24px rgba(255,77,109,0.3);
 }
 .gate-btn.continue:hover { box-shadow: 0 6px 32px rgba(255,77,109,0.5); }
+.gate-btn.continue:disabled {
+  background: var(--btn-bg);
+  color: var(--text-subtle);
+  box-shadow: none;
+  cursor: not-allowed;
+}
 .gate-btn.stop {
   background: var(--btn-bg);
   border-color: var(--border);
@@ -774,13 +928,30 @@ body::before {
 <!-- ── TOPBAR (mobile) ─────────────────────────────────────── -->
 <div id="topbar">
   <span class="logo-text">XJJ</span>
-  <div class="source-dropdown-wrap" id="mobile-dd-wrap">
-    <div class="dd-selected" id="mobile-dd-selected" onclick="toggleDropdown('mobile')">
-      <span id="mobile-dd-label">Source 1</span>
-      <span class="dd-arrow">▼</span>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <a class="mobile-btn" style="padding:8px 12px;" href="legal.html" target="_blank" rel="noopener" title="Terms &amp; DMCA">📄</a>
+    <button id="theme-mobile-btn" class="mobile-btn" style="padding:8px 12px;" onclick="toggleTheme()">🌙</button>
+    <button class="mobile-btn" style="padding:8px 12px;" onclick="toggleMobileCustomSourcePanel()">＋</button>
+    <div class="source-dropdown-wrap" id="mobile-dd-wrap">
+      <div class="dd-selected" id="mobile-dd-selected" onclick="toggleDropdown('mobile')">
+        <span id="mobile-dd-label">Source 1</span>
+        <span class="dd-arrow">▼</span>
+      </div>
+      <div class="dd-menu" id="mobile-dd-menu"></div>
     </div>
-    <div class="dd-menu" id="mobile-dd-menu"></div>
   </div>
+</div>
+
+<!-- ── CUSTOM SOURCE PANEL (mobile) ───────────────────────────── -->
+<div id="mobile-custom-source-panel" class="mobile-custom-source-panel">
+  <input type="text" id="custom-source-url-mobile" class="custom-source-input" placeholder="Paste TXT / JSON / API URL">
+  <select id="custom-source-type-mobile" class="custom-source-select">
+    <option value="txt">Playlist (.txt)</option>
+    <option value="json">Playlist (.json)</option>
+    <option value="api">API — direct video</option>
+    <option value="api-fetch">API — fetch URL</option>
+  </select>
+  <button class="mobile-btn btn-active" onclick="addCustomSource('-mobile')">＋ Add Source</button>
 </div>
 
 <!-- ── APP ────────────────────────────────────────────────── -->
@@ -816,17 +987,65 @@ body::before {
         <span class="toggle-slider"></span>
       </label>
     </div>
+    <div class="toggle-row">
+      <span>Mute</span>
+      <label class="toggle">
+        <input type="checkbox" id="mute-toggle" onchange="toggleMute()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <span>Light Mode</span>
+      <label class="toggle">
+        <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
 
     <hr class="sidebar-divider">
     <div class="sidebar-section-label">Navigate</div>
     <div class="nav-btn-group">
       <button class="nav-arrow-btn" onclick="prevVideo()">↑&nbsp;&nbsp;Previous</button>
       <button class="nav-arrow-btn pass-btn" onclick="nextVideo()">↓&nbsp;&nbsp;Next / Pass</button>
+      <button class="nav-arrow-btn" onclick="toggleFullscreen()">⛶&nbsp;&nbsp;Fullscreen</button>
+    </div>
+
+    <hr class="sidebar-divider">
+    <div class="sidebar-section-label">Custom Source</div>
+    <div class="custom-source-form">
+      <input type="text" id="custom-source-url" class="custom-source-input" placeholder="Paste TXT / JSON / API URL">
+      <select id="custom-source-type" class="custom-source-select">
+        <option value="txt">Playlist (.txt)</option>
+        <option value="json">Playlist (.json)</option>
+        <option value="api">API — direct video</option>
+        <option value="api-fetch">API — fetch URL</option>
+      </select>
+      <button class="nav-arrow-btn" onclick="addCustomSource()">＋&nbsp;&nbsp;Add Source</button>
     </div>
 
     <div class="sidebar-copyright">
-      <div class="copyright-text">© 51SEC · 2026</div>
-      <div id="sidebar-ad-space" style="margin-top: 12px;"></div>
+      <div class="copyright-text">
+        <span title="Author: NetSec — https://51sec.org">© 2026 NetSec</span>
+        <a class="github-link" href="https://github.com/51sec/xjj2" target="_blank" rel="noopener" title="View on GitHub">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+        </a>
+      </div>
+      <div class="disclaimer-text">
+        Videos are aggregated from third-party sources. We do not host, produce, or endorse this content.
+        <a href="legal.html" target="_blank" rel="noopener">Terms &amp; DMCA</a>
+      </div>
+      <div id="sidebar-ad-space" style="margin-top: 12px;">
+        <div class="ad-label">Advertisement</div>
+        <ins class="adsbygoogle"
+             style="display:block; width:100%; min-height:250px;"
+             data-ad-client="ca-pub-5660349373091698"
+             data-ad-slot="0000000000"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>
     </div>
   </nav>
 
@@ -834,12 +1053,14 @@ body::before {
   <div id="video-area">
 
     <div id="video-counter">–/–</div>
+    <div id="video-title" class="hidden"></div>
 
     <div id="video-container">
       <video id="main-video"
              playsinline
              webkit-playsinline
              preload="auto"
+             muted
              onclick="togglePlay()">
       </video>
       <div id="play-flash"></div>
@@ -854,7 +1075,8 @@ body::before {
     <!-- Keyboard shortcuts hint (PC) -->
     <div id="shortcuts">
       Space: Play/Pause &nbsp;·&nbsp; ↑↓: Prev/Next<br>
-      A: Auto &nbsp;·&nbsp; L: Loop &nbsp;·&nbsp; F: Fullscreen
+      A: Auto &nbsp;·&nbsp; L: Loop &nbsp;·&nbsp; M: Mute<br>
+      F: Fullscreen &nbsp;·&nbsp; T: Theme
     </div>
 
     <!-- Swipe hint (mobile) -->
@@ -865,10 +1087,12 @@ body::before {
       <div class="mobile-btn-row">
         <button class="mobile-btn" id="auto-mobile" onclick="toggleAutoNext()">Auto: OFF</button>
         <button class="mobile-btn" id="loop-mobile" onclick="toggleLoop()">Loop: OFF</button>
+        <button class="mobile-btn" id="mute-mobile" onclick="toggleMute()">Mute: OFF</button>
       </div>
       <div class="mobile-btn-row">
         <button class="mobile-btn" onclick="prevVideo()">↑ Prev</button>
         <button class="mobile-btn pass" onclick="nextVideo()">↓ PASS</button>
+        <button class="mobile-btn" onclick="toggleFullscreen()">⛶</button>
       </div>
     </div>
 
@@ -879,8 +1103,18 @@ body::before {
 <!-- Toast -->
 <div id="toast"></div>
 
+<!-- Age-gate interstitial, cookie consent banner, and per-video report
+     button (compliance.js). Loaded before the main script below so its
+     `initComplianceGate` hook is defined in time; see legal.html for the
+     Terms of Use / DMCA / Privacy policy it links to. Optional — remove
+     this tag and index.html falls back to starting immediately. -->
+<script src="compliance.js"></script>
+
 <!-- ================================================================
-     JAVASCRIPT (logic unchanged)
+     JAVASCRIPT
+     Author: NetSec — Website: https://51sec.org
+     Copyright (c) 2026 NetSec (https://51sec.org) — Licensed under MIT.
+     See LICENSE / https://github.com/51sec/xjj2 for full terms.
      ================================================================ -->
 <script>
 const SOURCES = [
@@ -896,19 +1130,28 @@ const SOURCES = [
   { id:10, label: 'PF129',          type: 'api-fetch',            url: 'https://netsec.alwaysdata.net/proxy.php?src=https%3A%2F%2Fpf129.com%2Fxjj%2Fget%2Fget1.php' },
 ];
 
+const MAX_API_RETRIES     = 5;
+const PAUSE_AUTO_CONTINUE = 60; // seconds of inactivity before the break modal auto-continues
+const PAUSE_START_SECONDS = 5;  // first image-change countdown in the break modal
+
 const state = {
   sourceId:     1,
   videos:       [],
   index:        0,
-  autoNext:     false,
+  autoNext:     true, // on by default: keeps sessions (and ad-break exposure) going without a click
   loop:         false,
   badUrls:      new Set(),
   skipCount:    0,
+  apiRetryCount:0,
   skipTimer:    null,
   stalledTimer: null,
   videoCount:        0,
   pauseTimer:        null,
-  pauseCountdown:    10,
+  dwellTimer:        null,
+  pauseCountdown:    0,
+  pauseCycle:        0,
+  pauseDuration:     0,
+  pauseElapsed:      0,
   _countedThisLoad:  false,
 };
 
@@ -922,14 +1165,16 @@ const overlayMsg = document.getElementById('overlay-msg');
 const playFlash  = document.getElementById('play-flash');
 const swipeHint  = document.getElementById('swipe-hint');
 const counter    = document.getElementById('video-counter');
+const titleEl    = document.getElementById('video-title');
 const toast      = document.getElementById('toast');
 
 async function loadSource(id) {
   const src = SOURCES.find(s => s.id === id);
   if (!src) return;
-  state.sourceId  = id;
-  state.badUrls   = new Set();
-  state.skipCount = 0;
+  state.sourceId     = id;
+  state.badUrls      = new Set();
+  state.skipCount    = 0;
+  state.apiRetryCount = 0;
   clearTimeout(state.skipTimer);
   clearTimeout(state.stalledTimer);
   updateDropdownLabel(src);
@@ -945,7 +1190,10 @@ async function loadSource(id) {
 
   showOverlay('Loading ' + src.label + '…');
   try {
-    const res = await fetch(src.url + '?_=' + Date.now());
+    // Cache-bust once per day rather than on every load, so repeat visits in
+    // the same day can be served from the browser/CDN cache.
+    const dailyCacheKey = new Date().toISOString().slice(0, 10);
+    const res = await fetch(src.url + '?_=' + dailyCacheKey);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text().then(t => t.trim());
     let videos = [];
@@ -966,6 +1214,12 @@ async function loadSource(id) {
           return { url, title: item.title || item.name || '' };
         })
         .filter(v => v.url);
+    }
+
+    // Optional hook from compliance.js: drops videos a viewer has reported
+    // via the 🚩 Report button. Guarded so this file works standalone too.
+    if (typeof filterReportedVideos === 'function') {
+      videos = filterReportedVideos(videos);
     }
 
     if (videos.length === 0) throw new Error('No video URLs found');
@@ -989,6 +1243,7 @@ function playCurrentVideo() {
   if (src.type === 'api-fetch') {
     // Fetch API → response body is the mp4 URL as plain text
     counter.textContent = src.label + ' — live';
+    setVideoTitle('');
     state._countedThisLoad = false;
     showOverlay('Fetching URL…');
     const fetchUrl = src.url + (src.url.includes('?') ? '&' : '?') + '_=' + Date.now();
@@ -1018,6 +1273,7 @@ function playCurrentVideo() {
   if (src.type === 'api') {
     const apiUrl = src.url + (src.url.includes('?') ? '&' : '?') + '_=' + Date.now();
     counter.textContent = src.label + ' — live';
+    setVideoTitle('');
     state._countedThisLoad = false;
     showOverlay('Loading…');
     video.src  = apiUrl;
@@ -1047,6 +1303,7 @@ function playCurrentVideo() {
   const label = (state.index + 1) + ' / ' + state.videos.length +
                 (state.badUrls.size ? '  (' + state.badUrls.size + ' skipped)' : '');
   counter.textContent = label;
+  setVideoTitle(item.title || '');
   state._countedThisLoad = false;
   showOverlay('Loading…');
   video.src  = item.url;
@@ -1059,14 +1316,26 @@ function playCurrentVideo() {
   video.play().catch(() => { clearTimeout(state.stalledTimer); hideOverlay(); showOverlay('▶ Tap to play'); });
 }
 
+function setVideoTitle(text) {
+  titleEl.textContent = text || '';
+  titleEl.classList.toggle('hidden', !text);
+}
+
 function markBadAndSkip(reason) {
   const src = activeSource();
   clearTimeout(state.stalledTimer);
   if (src.type === 'api' || src.type === 'api-fetch') {
     state.skipCount++;
-    showOverlay('⚠ ' + reason + ' — retrying…');
+    state.apiRetryCount++;
+    if (state.apiRetryCount > MAX_API_RETRIES) {
+      showOverlay('⚠ ' + src.label + ' failed ' + MAX_API_RETRIES + 'x — press Next/Pass to retry manually');
+      showToast(src.label + ' unavailable');
+      return;
+    }
+    const delay = Math.min(1000 * state.apiRetryCount, 5000);
+    showOverlay('⚠ ' + reason + ' — retrying (' + state.apiRetryCount + '/' + MAX_API_RETRIES + ')…');
     showToast('Retrying ' + src.label);
-    state.skipTimer = setTimeout(playCurrentVideo, 1000);
+    state.skipTimer = setTimeout(playCurrentVideo, delay);
     return;
   }
   const url = state.videos[state.index]?.url;
@@ -1086,7 +1355,11 @@ function markBadAndSkip(reason) {
 function nextVideo() {
   if (checkPauseGate()) return;
   const src = activeSource();
-  if (src.type === 'api' || src.type === 'api-fetch') { playCurrentVideo(); return; }
+  if (src.type === 'api' || src.type === 'api-fetch') {
+    state.apiRetryCount = 0; // manual press — give it a fresh set of retries
+    playCurrentVideo();
+    return;
+  }
   if (!state.videos.length) return;
   state.index = (state.index + 1) % state.videos.length;
   playCurrentVideo();
@@ -1127,7 +1400,9 @@ function flashIcon(icon) {
 video.addEventListener('canplay',  () => { clearTimeout(state.stalledTimer); hideOverlay(); });
 video.addEventListener('playing',  () => {
   clearTimeout(state.stalledTimer); hideOverlay();
+  state.apiRetryCount = 0;
   if (!state._countedThisLoad) { state._countedThisLoad = true; state.videoCount++; }
+  preloadNextVideo();
 });
 video.addEventListener('waiting',  () => {
   clearTimeout(state.stalledTimer);
@@ -1174,6 +1449,76 @@ function toggleLoop() {
   showToast('Loop ' + (state.loop ? 'ON' : 'OFF'));
 }
 
+function toggleMute() {
+  video.muted = !video.muted;
+  document.getElementById('mute-toggle').checked = video.muted;
+  const btn = document.getElementById('mute-mobile');
+  btn.textContent = 'Mute: ' + (video.muted ? 'ON' : 'OFF');
+  btn.classList.toggle('btn-active', video.muted);
+  showToast('Mute ' + (video.muted ? 'ON' : 'OFF'));
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('theme-toggle').checked = theme === 'light';
+  document.getElementById('theme-mobile-btn').textContent = theme === 'light' ? '🌙' : '☀️';
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'light' ? 'dark' : 'light';
+  try { localStorage.setItem('xjj-theme', next); } catch (e) { /* storage unavailable */ }
+  applyTheme(next);
+  showToast('Theme: ' + (next === 'light' ? 'Light' : 'Dark'));
+}
+
+function preloadNextVideo() {
+  const src = activeSource();
+  if (src.type !== 'list' || !state.videos.length) return;
+  const nextIndex = (state.index + 1) % state.videos.length;
+  const nextUrl   = state.videos[nextIndex]?.url;
+  if (!nextUrl) return;
+  let link = document.getElementById('preload-next-link');
+  if (!link) {
+    link = document.createElement('link');
+    link.id  = 'preload-next-link';
+    link.rel = 'prefetch';
+    link.as  = 'video';
+    document.head.appendChild(link);
+  }
+  link.href = nextUrl;
+}
+
+function addCustomSource(suffix) {
+  suffix = suffix || '';
+  const urlInput  = document.getElementById('custom-source-url' + suffix);
+  const typeInput = document.getElementById('custom-source-type' + suffix);
+  const url  = urlInput.value.trim();
+  const type = typeInput.value; // 'txt' | 'json' | 'api' | 'api-fetch'
+  if (!url) { showToast('Enter a URL first'); return; }
+
+  let label = 'Custom';
+  try { label = new URL(url).hostname; } catch (e) { /* keep default label */ }
+
+  const nextId = Math.max(...SOURCES.map(s => s.id)) + 1;
+  const src = (type === 'txt' || type === 'json')
+    ? { id: nextId, label, type: 'list', format: type, url }
+    : { id: nextId, label, type, url };
+
+  SOURCES.push(src);
+  buildSourceButtons();
+  urlInput.value = '';
+  if (suffix) toggleMobileCustomSourcePanel(false);
+  switchSource(nextId);
+  showToast('Added source: ' + label);
+}
+
+function toggleMobileCustomSourcePanel(forceOpen) {
+  const panel = document.getElementById('mobile-custom-source-panel');
+  const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : !panel.classList.contains('open');
+  panel.classList.toggle('open', shouldOpen);
+}
+
 function toggleFullscreen() {
   if (document.fullscreenElement || document.webkitFullscreenElement) {
     (document.exitFullscreen || document.webkitExitFullscreen).call(document);
@@ -1184,7 +1529,7 @@ function toggleFullscreen() {
 }
 
 document.addEventListener('keydown', e => {
-  if (['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+  if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
   switch (e.key) {
     case 'ArrowDown': case 'ArrowRight': case 'n': case 'N':
       e.preventDefault(); nextVideo(); break;
@@ -1194,6 +1539,8 @@ document.addEventListener('keydown', e => {
     case 'a': case 'A': toggleAutoNext(); break;
     case 'l': case 'L': toggleLoop(); break;
     case 'f': case 'F': toggleFullscreen(); break;
+    case 'm': case 'M': toggleMute(); break;
+    case 't': case 'T': toggleTheme(); break;
   }
 });
 
@@ -1265,8 +1612,9 @@ function buildSourceButtons() {
 }
 
 // ── PAUSE MODAL (ported from mm) ────────────────────────────────
-const GATE_EVERY = 10;
+const GATE_EVERY = 6; // ad-supported: breaks (and the ad slot in them) show more often
 const PIC_API    = 'https://www.cunshao.com/666666/api/pic.php';
+const CONTINUE_MIN_DWELL = 5; // seconds Continue stays disabled so the gate's ad gets a real view
 
 function checkPauseGate() {
   if (state.videoCount >= GATE_EVERY) {
@@ -1279,17 +1627,45 @@ function checkPauseGate() {
 function showPauseModal() {
   video.pause();
   document.getElementById('pause-modal').classList.add('active');
+  document.getElementById('gate-sub').textContent =
+    "You've watched " + GATE_EVERY + " videos. Would you like to continue?";
   // Load fresh image
   document.getElementById('gate-img').src = PIC_API + '?' + Date.now();
-  // Start 10-second countdown that refreshes image on each cycle
-  state.pauseCountdown = 10;
+  // First countdown is short, then each image change grows the wait by (2 + cycle count):
+  // 5s, then +3 -> 8s, then +4 -> 12s, then +5 -> 17s, ...
+  state.pauseCycle     = 0;
+  state.pauseDuration  = PAUSE_START_SECONDS;
+  state.pauseCountdown = state.pauseDuration;
+  state.pauseElapsed   = 0;
   document.getElementById('gate-timer').textContent = 'New image in ' + state.pauseCountdown + 's';
   state.pauseTimer = setInterval(() => {
     state.pauseCountdown--;
+    state.pauseElapsed++;
+    if (state.pauseElapsed >= PAUSE_AUTO_CONTINUE) { gateContinue(); return; }
     document.getElementById('gate-timer').textContent = 'New image in ' + state.pauseCountdown + 's';
     if (state.pauseCountdown <= 0) {
       document.getElementById('gate-img').src = PIC_API + '?' + Date.now();
-      state.pauseCountdown = 10;
+      state.pauseCycle++;
+      state.pauseDuration += (2 + state.pauseCycle);
+      state.pauseCountdown = state.pauseDuration;
+    }
+  }, 1000);
+
+  // Give the ad slot in this modal a minimum guaranteed view before Continue
+  // is clickable, similar to a skippable-ad countdown.
+  const continueBtn = document.getElementById('gate-continue-btn');
+  let dwell = CONTINUE_MIN_DWELL;
+  continueBtn.disabled = true;
+  continueBtn.textContent = '✅ Continue (' + dwell + ')';
+  clearInterval(state.dwellTimer);
+  state.dwellTimer = setInterval(() => {
+    dwell--;
+    if (dwell <= 0) {
+      clearInterval(state.dwellTimer);
+      continueBtn.disabled = false;
+      continueBtn.textContent = '✅ Continue';
+    } else {
+      continueBtn.textContent = '✅ Continue (' + dwell + ')';
     }
   }, 1000);
 }
@@ -1297,6 +1673,7 @@ function showPauseModal() {
 function hidePauseModal() {
   document.getElementById('pause-modal').classList.remove('active');
   if (state.pauseTimer) { clearInterval(state.pauseTimer); state.pauseTimer = null; }
+  if (state.dwellTimer)  { clearInterval(state.dwellTimer); state.dwellTimer = null; }
 }
 
 function gateContinue() {
@@ -1311,22 +1688,61 @@ function gateStop() {
   video.pause();
 }
 
-buildSourceButtons();
-loadSource(SOURCES[0].id);
+// Reflects state/video defaults set above (autoNext: true, video muted by
+// default for reliable autoplay) in the toggle switches and mobile buttons,
+// since those defaults are no longer set by a user click through
+// toggleAutoNext()/toggleMute().
+function syncControlUI() {
+  document.getElementById('auto-next-toggle').checked = state.autoNext;
+  const autoBtn = document.getElementById('auto-mobile');
+  autoBtn.textContent = 'Auto: ' + (state.autoNext ? 'ON' : 'OFF');
+  autoBtn.classList.toggle('btn-active', state.autoNext);
+
+  document.getElementById('mute-toggle').checked = video.muted;
+  const muteBtn = document.getElementById('mute-mobile');
+  muteBtn.textContent = 'Mute: ' + (video.muted ? 'ON' : 'OFF');
+  muteBtn.classList.toggle('btn-active', video.muted);
+}
+
+function startApp() {
+  applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
+  syncControlUI();
+  buildSourceButtons();
+  loadSource(SOURCES[0].id);
+}
+
+// If compliance.js is present, it gates startup behind the age/content
+// disclaimer interstitial and then starts the app itself. If that file has
+// been removed (see README "Self-hosting notes"), start immediately.
+if (typeof initComplianceGate === 'function') {
+  initComplianceGate(startApp);
+} else {
+  startApp();
+}
 </script>
 
 <!-- ── PAUSE MODAL ───────────────────────────────────────────── -->
 <div id="pause-modal">
   <div class="gate-box">
     <div class="gate-title">🎬 Take a Break!</div>
-    <div class="gate-sub">You've watched 10 videos. Would you like to continue?</div>
+    <div class="gate-sub" id="gate-sub">You've watched a few videos. Would you like to continue?</div>
     <div class="gate-img-wrap">
       <img id="gate-img" src="" alt="Preview">
     </div>
-    <div class="gate-timer" id="gate-timer">New image in 10s</div>
+    <div class="gate-timer" id="gate-timer">New image in 5s</div>
+    <div class="gate-ad-slot">
+      <div class="ad-label">Advertisement</div>
+      <ins class="adsbygoogle"
+           style="display:block; width:100%; min-height:90px;"
+           data-ad-client="ca-pub-5660349373091698"
+           data-ad-slot="0000000001"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
     <div class="gate-actions">
       <button class="gate-btn stop"     onclick="gateStop()">❌ Stop</button>
-      <button class="gate-btn continue" onclick="gateContinue()">✅ Continue</button>
+      <button class="gate-btn continue" id="gate-continue-btn" onclick="gateContinue()">✅ Continue</button>
     </div>
     <div class="gate-social">
       <div class="gate-social-label">Follow us</div>
@@ -1345,31 +1761,35 @@ loadSource(SOURCES[0].id);
         </a>
       </div>
     </div>
+    <div class="disclaimer-text" style="margin-top: 14px;">
+      Videos are aggregated from third-party sources. We do not host, produce, or endorse this content.
+      <a href="legal.html" target="_blank" rel="noopener">Terms &amp; DMCA</a>
+    </div>
   </div>
 </div>
 
-<!-- Analytics (unchanged) -->
-<script async src="https://ackee.itprosec.com/Yds1jiaxr4VTgb2u7lpc9B8OZWF6350k.js" data-ackee-server="https://ackee.itprosec.com" data-ackee-domain-id="3fa9a76e-a504-4ec5-806e-0679cfc59300" data-ackee-opts='{ "detailed": true }'></script>
-<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ee4816c3be6499ca1921607cb43ebec"}'></script>
-<!-- Google tag (gtag.js) for xjj this site's analytics-->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZG4SMQ6WCB"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-ZG4SMQ6WCB');
-</script>
+<!-- Analytics: Cloudflare Insights + Google Analytics are loaded on demand by
+     compliance.js, only after the visitor accepts the cookie consent banner. -->
 
 <!-- Google Ads recovery -->
 <script async src="https://fundingchoicesmessages.google.com/i/pub-5660349373091698?ers=1" nonce="71EKVshklXofUN3O1mph_A"></script>
 <script nonce="71EKVshklXofUN3O1mph_A">(function() {function signalGooglefcPresent() {if (!window.frames['googlefcPresent']) {if (document.body) {const iframe = document.createElement('iframe'); iframe.style = 'width: 0; height: 0; border: none; z-index: -1000; left: -1000px; top: -1000px;'; iframe.style.display = 'none'; iframe.name = 'googlefcPresent'; document.body.appendChild(iframe);} else {setTimeout(signalGooglefcPresent, 0);}}}signalGooglefcPresent();})();</script>
 
-<script async custom-element="amp-auto-ads" src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"></script>
+<!-- AdSense base library + explicit Auto ads opt-in. Auto ads handles
+     responsive placements (including mobile anchor/vignette units) on its
+     own, which is safer than hand-rolling a fixed mobile banner that could
+     overlap tap targets and risk an invalid-clicks policy hit. This
+     replaces the old <amp-auto-ads>/<amp-ad> tags, which require the full
+     AMP runtime to render and were inert on this non-AMP page. -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5660349373091698" crossorigin="anonymous"></script>
+<script>
+  (window.adsbygoogle = window.adsbygoogle || []).push({
+    google_ad_client: "ca-pub-5660349373091698",
+    enable_page_level_ads: true
+  });
+</script>
 <div id="ezoic-pub-ad-placeholder-608"></div>
 <div id="ezoic-pub-ad-placeholder-143"></div>
-<amp-auto-ads type="adsense" data-ad-client="ca-pub-5660349373091698"></amp-auto-ads>
-<amp-ad width="100vw" height="320" type="adsense" data-ad-client="ca-pub-5660349373091698" data-ad-slot="7912531145" data-auto-format="rspv" data-full-width=""><div overflow=""></div></amp-ad>
 
 <!-- Ad block detection -->
 <div id="adblock-overlay">
