@@ -117,6 +117,14 @@ body::before {
   justify-content: space-between;
   padding: 0 20px;
 }
+#mobile-ad-banner {
+  display: none;
+  position: fixed; top: 56px; left: 0; right: 0; z-index: 85;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  padding: 4px 0;
+}
 #topbar .logo-text {
   font-family: var(--font-display);
   font-size: 1.5rem;
@@ -266,9 +274,12 @@ body::before {
   flex-direction: column;
   width: var(--sidebar-w);
   min-width: var(--sidebar-w);
+  min-height: 0; /* flex items default to min-height:auto, which ignores
+                    overflow-y:auto and grows past the viewport instead of
+                    scrolling — this override is what makes scrolling work */
   background: var(--surface);
   border-right: 1px solid var(--border);
-  padding: 28px 18px 22px;
+  padding: 18px 16px 16px;
   gap: 2px;
   z-index: 10;
   position: relative;
@@ -287,14 +298,14 @@ body::before {
 
 .sidebar-logo {
   font-family: var(--font-display);
-  font-size: 1.9rem;
+  font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 5px;
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 26px;
+  margin-bottom: 12px;
   text-align: center;
   position: relative;
 }
@@ -315,7 +326,7 @@ body::before {
   text-transform: uppercase;
   letter-spacing: 2px;
   color: var(--text-subtle);
-  margin: 14px 0 6px 2px;
+  margin: 6px 0 4px 2px;
 }
 
 .sidebar-btn {
@@ -346,20 +357,28 @@ body::before {
 .sidebar-divider {
   border: none;
   border-top: 1px solid var(--border);
-  margin: 10px 0;
+  margin: 6px 0;
 }
 
 /* Toggle controls */
+.toggle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 8px;
+}
 .toggle-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 9px 4px;
+  padding: 6px 2px;
 }
 .toggle-row span {
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .toggle { position: relative; width: 38px; height: 20px; }
 .toggle input { opacity: 0; width: 0; height: 0; }
@@ -388,23 +407,28 @@ body::before {
 
 /* Nav buttons */
 .nav-btn-group {
-  display: flex; flex-direction: column; gap: 8px;
-  margin-top: 6px;
+  display: flex; flex-direction: column; gap: 6px;
+  margin-top: 4px;
 }
+.nav-btn-row {
+  display: flex; gap: 6px;
+}
+.nav-btn-row .nav-arrow-btn { width: auto; flex: 1; }
 .nav-arrow-btn {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
   background: var(--btn-bg);
   border: 1px solid var(--border);
   color: var(--text-muted);
-  padding: 11px;
+  padding: 9px 6px;
   border-radius: var(--radius);
   font-family: var(--font-body);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
   width: 100%;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
 }
 .nav-arrow-btn:hover { background: var(--btn-hover); color: var(--text); border-color: var(--border-2); }
 .nav-arrow-btn:active { transform: scale(0.97); }
@@ -422,8 +446,12 @@ body::before {
 .custom-source-form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 6px;
+  margin-top: 2px;
+}
+.custom-source-row {
+  display: flex;
+  gap: 6px;
 }
 .custom-source-input,
 .custom-source-select {
@@ -437,6 +465,8 @@ body::before {
   font-size: 0.76rem;
   outline: none;
 }
+.custom-source-row .custom-source-input { flex: 1; min-width: 0; }
+.custom-source-select-compact { flex: 0 0 64px; padding-left: 6px; padding-right: 4px; }
 .custom-source-input::placeholder { color: var(--text-subtle); }
 .custom-source-input:focus,
 .custom-source-select:focus { border-color: var(--accent); }
@@ -709,6 +739,7 @@ body::before {
 @media (max-width: 768px) {
   #sidebar    { display: none !important; }
   #topbar     { display: flex; }
+  #mobile-ad-banner { display: block; }
   #mobile-controls { display: flex; }
   #shortcuts  { display: none; }
   #main-video { height: 100%; object-fit: cover; width: 100%; }
@@ -811,16 +842,12 @@ body::before {
   width: 100%;
   margin-bottom: 16px;
   position: relative; z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-.ad-label {
-  font-family: var(--font-mono);
-  font-size: 0.55rem;
-  color: var(--text-subtle);
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  text-align: center;
-  margin-bottom: 6px;
-}
+#sidebar-ad-space,
+#sidebar-ad-space-2 { text-align: center; }
 .gate-actions { display: flex; gap: 10px; width: 100%; margin-bottom: 20px; }
 .gate-btn {
   flex: 1; padding: 13px 0; border-radius: 12px;
@@ -952,6 +979,21 @@ body::before {
   </div>
 </div>
 
+<!-- ── MOBILE AD BANNER ─────────────────────────────────────────
+     Fixed 320x50 instead of responsive/auto, same reasoning as the
+     other ad slots: a responsive unit risks an oversized/interactive
+     creative, worse on a small screen. Sits just below the top bar,
+     overlaying the video the same way the top bar itself already does
+     by design (mobile only). -->
+<div id="mobile-ad-banner">
+  <!-- XJJ - Mobile Banner -->
+  <ins class="adsbygoogle"
+       style="display:inline-block; width:320px; height:50px; max-width:100%;"
+       data-ad-client="ca-pub-5660349373091698"
+       data-ad-slot="3800566595"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+
 <!-- ── CUSTOM SOURCE PANEL (mobile) ───────────────────────────── -->
 <div id="mobile-custom-source-panel" class="mobile-custom-source-panel">
   <input type="text" id="custom-source-url-mobile" class="custom-source-input" placeholder="Paste TXT / JSON / API URL">
@@ -983,68 +1025,90 @@ body::before {
     <hr class="sidebar-divider">
 
     <div id="sidebar-ad-space">
-      <!-- xjj-sidebar -->
-      <div class="ad-label">Advertisement</div>
+      <!-- xjj-sidebar — fixed 160x300 instead of responsive/auto: a
+           responsive slot let Google serve an oversized skyscraper-style
+           creative that pushed the rest of the sidebar off-screen. A fixed
+           size constrains what can be served here. -->
       <ins class="adsbygoogle"
-           style="display:block; width:100%; min-height:250px;"
+           style="display:inline-block; width:160px; height:300px;"
            data-ad-client="ca-pub-5660349373091698"
-           data-ad-slot="2402890298"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
+           data-ad-slot="2402890298"></ins>
       <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
 
     <hr class="sidebar-divider">
 
     <div class="sidebar-section-label">Playback</div>
-    <div class="toggle-row">
-      <span>Auto Next</span>
-      <label class="toggle">
-        <input type="checkbox" id="auto-next-toggle" onchange="toggleAutoNext()">
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-    <div class="toggle-row">
-      <span>Loop</span>
-      <label class="toggle">
-        <input type="checkbox" id="loop-toggle" onchange="toggleLoop()">
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-    <div class="toggle-row">
-      <span>Mute</span>
-      <label class="toggle">
-        <input type="checkbox" id="mute-toggle" onchange="toggleMute()">
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-    <div class="toggle-row">
-      <span>Light Mode</span>
-      <label class="toggle">
-        <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
-        <span class="toggle-slider"></span>
-      </label>
+    <div class="toggle-grid">
+      <div class="toggle-row">
+        <span>Auto Next</span>
+        <label class="toggle">
+          <input type="checkbox" id="auto-next-toggle" onchange="toggleAutoNext()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <span>Loop</span>
+        <label class="toggle">
+          <input type="checkbox" id="loop-toggle" onchange="toggleLoop()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <span>Mute</span>
+        <label class="toggle">
+          <input type="checkbox" id="mute-toggle" onchange="toggleMute()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <span>Light</span>
+        <label class="toggle">
+          <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
     </div>
 
     <hr class="sidebar-divider">
     <div class="sidebar-section-label">Navigate</div>
     <div class="nav-btn-group">
-      <button class="nav-arrow-btn" onclick="prevVideo()">↑&nbsp;&nbsp;Previous</button>
-      <button class="nav-arrow-btn pass-btn" onclick="nextVideo()">↓&nbsp;&nbsp;Next / Pass</button>
-      <button class="nav-arrow-btn" onclick="toggleFullscreen()">⛶&nbsp;&nbsp;Fullscreen</button>
+      <button class="nav-arrow-btn pass-btn" onclick="nextVideo()">↓&nbsp;Next / Pass</button>
+      <div class="nav-btn-row">
+        <button class="nav-arrow-btn" onclick="prevVideo()">↑&nbsp;Prev</button>
+        <button class="nav-arrow-btn" onclick="toggleFullscreen()">⛶&nbsp;Full</button>
+      </div>
     </div>
 
     <hr class="sidebar-divider">
     <div class="sidebar-section-label">Custom Source</div>
     <div class="custom-source-form">
-      <input type="text" id="custom-source-url" class="custom-source-input" placeholder="Paste TXT / JSON / API URL">
-      <select id="custom-source-type" class="custom-source-select">
-        <option value="txt">Playlist (.txt)</option>
-        <option value="json">Playlist (.json)</option>
-        <option value="api">API — direct video</option>
-        <option value="api-fetch">API — fetch URL</option>
-      </select>
+      <div class="custom-source-row">
+        <input type="text" id="custom-source-url" class="custom-source-input" placeholder="Paste TXT / JSON / API URL">
+        <select id="custom-source-type" class="custom-source-select custom-source-select-compact">
+          <option value="txt">.txt</option>
+          <option value="json">.json</option>
+          <option value="api">API</option>
+          <option value="api-fetch">Fetch</option>
+        </select>
+      </div>
       <button class="nav-arrow-btn" onclick="addCustomSource()">＋&nbsp;&nbsp;Add Source</button>
+    </div>
+
+    <hr class="sidebar-divider">
+
+    <div id="sidebar-ad-space-2">
+      <!-- xjj-sidebar-2 — TODO: create this ad unit in AdSense and replace
+           the placeholder data-ad-slot below. Fixed 160x600 (wide
+           skyscraper) — the sidebar now scrolls (see #sidebar's
+           overflow-y:auto), so a tall unit at the very end is safe; it
+           won't push other controls off-screen the way it did when it was
+           responsive and placed higher up. -->
+      <ins class="adsbygoogle"
+           style="display:inline-block; width:160px; height:600px;"
+           data-ad-client="ca-pub-5660349373091698"
+           data-ad-slot="0000000002"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
   </nav>
 
@@ -1642,9 +1706,10 @@ function buildSourceButtons() {
 }
 
 // ── PAUSE MODAL (ported from mm) ────────────────────────────────
-const GATE_EVERY = 8; // ad-supported: breaks (and the ad slot in them) show more often
+const GATE_EVERY = 8; // periodic break to encourage mindful viewing
 const PIC_API    = 'https://www.cunshao.com/666666/api/pic.php';
 const CONTINUE_MIN_DWELL = 5; // seconds Continue stays disabled so the gate's ad gets a real view
+let breakAdPushed = false; // push the modal's <ins> only once, and only once it's actually visible
 
 function checkPauseGate() {
   if (state.videoCount >= GATE_EVERY) {
@@ -1659,6 +1724,10 @@ function showPauseModal() {
   document.getElementById('pause-modal').classList.add('active');
   document.getElementById('gate-sub').textContent =
     "You've watched " + GATE_EVERY + " videos. Would you like to continue?";
+  if (!breakAdPushed) {
+    breakAdPushed = true;
+    (window.adsbygoogle = window.adsbygoogle || []).push({});
+  }
   // Load fresh image
   document.getElementById('gate-img').src = PIC_API + '?' + Date.now();
   // First countdown is short, then each image change grows the wait by (2 + cycle count):
@@ -1765,15 +1834,15 @@ if (typeof initComplianceGate === 'function') {
     </div>
     <div class="gate-timer" id="gate-timer">New image in 5s</div>
     <div class="gate-ad-slot">
-      <!-- XJJ - Break Modal -->
-      <div class="ad-label">Advertisement</div>
-      <ins class="adsbygoogle"
-           style="display:block; width:100%; min-height:90px;"
+      <!-- XJJ - Break Modal — fixed 336x280 (IAB "large rectangle"). Ad
+           push() is NOT called here: this modal starts display:none, and
+           pushing while hidden (0x0 size) makes AdSense fail the slot
+           permanently, even after it becomes visible. It's pushed lazily
+           from showPauseModal() instead, the first time the modal opens. -->
+      <ins id="gate-ad-ins" class="adsbygoogle"
+           style="display:inline-block; width:336px; height:280px;"
            data-ad-client="ca-pub-5660349373091698"
-           data-ad-slot="7463645282"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+           data-ad-slot="7463645282"></ins>
     </div>
     <div class="gate-actions">
       <button class="gate-btn stop"     onclick="gateStop()">❌ Stop</button>
