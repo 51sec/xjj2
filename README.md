@@ -123,3 +123,15 @@ Both files are optional — `index.html` only calls into `compliance.js` via gua
 This project is licensed under the [MIT License](LICENSE) — Copyright (c) 2026 NetSec ([https://51sec.org](https://51sec.org)).
 
 If you fork or redistribute this project, the MIT License requires that you keep the original copyright notice and license text (see [`LICENSE`](LICENSE)) intact in your copy.
+
+## Known issue: ads not responding to clicks
+
+Ads render correctly but clicking them does nothing (no navigation, no popup). Investigation so far:
+
+- **Not our JS**: no `preventDefault`/`stopPropagation` on any click path, no `beforeunload`, no `window.open` interference. Verified via headless Chrome that the page's script runs cleanly with no errors.
+- **Not an overlay of ours**: DevTools element inspection confirms hovering an ad selects the ad's own `<a>` tag, not something on top of it. All `pointer-events: none` rules are scoped to unrelated elements (counter/title/toast/shortcuts).
+- **Not CSP/sandbox**: this page sets no Content-Security-Policy, `X-Frame-Options`, or `sandbox` attributes.
+- **Not the browser or ad blocker**: Google ads on other sites click through fine in the same browser, with no ad blocker installed and no "popup blocked" indicator appearing.
+- **It is page-specific**, which points at an interaction between this page and Google's ad markup.
+
+**Current leading theory (unconfirmed):** some Google native ad formats render *directly into the host page's DOM* rather than an isolated cross-origin iframe — confirmed here via DevTools, where an ad appeared inside a `#mys-wrapper` > `#mys-overlay` + `#mys-content` structure using `x-frame-width`/`x-frame-height` attributes that mimic an iframe without being one. Because it isn't iframe-isolated, this page's aggressive global reset (`*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }`) also applied to Google's own internal ad markup, including that `#mys-overlay` layer. If that overlay depends on default browser box-model behavior to size/position itself as a click-passthrough layer, the reset could leave it covering the ad and swallowing clicks. The reset is now scoped to exclude `ins.adsbygoogle` and its descendants. **This has not been verified end-to-end** — real ad click-through can't be reproduced in a headless test — so it needs live confirmation.

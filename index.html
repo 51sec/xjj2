@@ -45,7 +45,18 @@
    XJJ – Redesigned Video Player
    ===================================================================== */
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* Excludes AdSense ad containers and everything inside them (including
+   their own ::before/::after): some native ad formats render directly
+   into the host page's DOM (not isolated in a cross-origin iframe —
+   confirmed via DevTools, an ad showed a "mys-" wrapper with
+   x-frame-width/height attributes mimicking an iframe without being
+   one), so this reset would otherwise apply to Google's own internal ad
+   markup too. That's suspected of breaking an internal click-passthrough
+   overlay in that ad format, since it likely assumes normal browser
+   default margin/padding/box-sizing. */
+*:not(ins.adsbygoogle):not(ins.adsbygoogle *) { box-sizing: border-box; margin: 0; padding: 0; }
+*:not(ins.adsbygoogle):not(ins.adsbygoogle *)::before,
+*:not(ins.adsbygoogle):not(ins.adsbygoogle *)::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
   --bg:          #080810;
