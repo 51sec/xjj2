@@ -296,6 +296,29 @@ body::before {
   opacity: 0.6;
 }
 
+/* Right ad panel — dedicated column, mirrors the sidebar's role */
+#right-ad-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 192px;
+  min-width: 192px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  padding: 16px;
+  z-index: 10;
+  position: relative;
+}
+#right-ad-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent2), var(--accent), transparent);
+  opacity: 0.6;
+}
+
 .sidebar-logo {
   font-family: var(--font-display);
   font-size: 1.5rem;
@@ -738,6 +761,7 @@ body::before {
 /* ── RESPONSIVE ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
   #sidebar    { display: none !important; }
+  #right-ad-panel { display: none !important; }
   #topbar     { display: flex; }
   #mobile-ad-banner { display: block; }
   #mobile-controls { display: flex; }
@@ -846,8 +870,7 @@ body::before {
   flex-direction: column;
   align-items: center;
 }
-#sidebar-ad-space,
-#sidebar-ad-space-2 { text-align: center; }
+#sidebar-ad-space { text-align: center; }
 .gate-actions { display: flex; gap: 10px; width: 100%; margin-bottom: 20px; }
 .gate-btn {
   flex: 1; padding: 13px 0; border-radius: 12px;
@@ -1094,25 +1117,6 @@ body::before {
       </div>
       <button class="nav-arrow-btn" onclick="addCustomSource()">＋&nbsp;&nbsp;Add Source</button>
     </div>
-
-    <hr class="sidebar-divider">
-
-    <div id="sidebar-ad-space-2">
-      <!-- Reuses the "xjj-sidebar" ad unit (slot 2402890298) at a
-           different fixed size (160x600) than its first placement above.
-           This was briefly auto/responsive on the theory that being the
-           last element in a scrollable sidebar made oversized creatives
-           harmless — that turned out to be wrong: an expandable/
-           interactive creative rendered as a viewport-relative overlay
-           covering the video, ignoring where its container sits on the
-           page entirely. Fixed size is the only mitigation that's
-           actually held up across testing, here included. -->
-      <ins class="adsbygoogle"
-           style="display:inline-block; width:160px; height:600px;"
-           data-ad-client="ca-pub-5660349373091698"
-           data-ad-slot="2402890298"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-    </div>
   </nav>
 
   <!-- ── VIDEO AREA ─────────────────────────────────────────── -->
@@ -1162,6 +1166,24 @@ body::before {
       </div>
     </div>
 
+  </div>
+
+  <!-- ── RIGHT AD PANEL (PC) ──────────────────────────────────
+       Dedicated column, not an overlay — covering the video was
+       exactly the problem with every ad approach tried before this
+       one, so this ad gets its own reserved space instead of
+       floating on top of anything. Desktop only, same as the
+       sidebar. ────────────────────────────────────────────── -->
+  <div id="right-ad-panel">
+    <!-- Reuses the "xjj-sidebar" ad unit (slot 2402890298) at a
+         different fixed size (160x600) than its first placement in
+         the left sidebar. Fixed size only — see the lesson on
+         responsive/auto ad formats elsewhere in this file. -->
+    <ins class="adsbygoogle"
+         style="display:inline-block; width:160px; height:600px;"
+         data-ad-client="ca-pub-5660349373091698"
+         data-ad-slot="2402890298"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
 
 </div>
@@ -1925,17 +1947,23 @@ if (typeof initComplianceGate === 'function') {
 <script async src="https://fundingchoicesmessages.google.com/i/pub-5660349373091698?ers=1" nonce="71EKVshklXofUN3O1mph_A"></script>
 <script nonce="71EKVshklXofUN3O1mph_A">(function() {function signalGooglefcPresent() {if (!window.frames['googlefcPresent']) {if (document.body) {const iframe = document.createElement('iframe'); iframe.style = 'width: 0; height: 0; border: none; z-index: -1000; left: -1000px; top: -1000px;'; iframe.style.display = 'none'; iframe.name = 'googlefcPresent'; document.body.appendChild(iframe);} else {setTimeout(signalGooglefcPresent, 0);}}}signalGooglefcPresent();})();</script>
 
-<!-- AdSense base library, used by the two manual <ins class="adsbygoogle">
-     units (sidebar + break modal) elsewhere on this page. Auto ads
-     (enable_page_level_ads) was tried here and removed: on this app's
-     full-screen, overflow:hidden layout, Google's auto-injected vignette
-     ad rendered as a large box covering the video, and its own collapse
-     control didn't respond to clicks — a bad interaction between Auto ads'
-     page-level placement and this page's non-standard layout, not
-     something fixable from our side. Stick to manual, explicitly-placed
-     ad units instead. This also replaced the old <amp-auto-ads>/<amp-ad>
-     tags, which required the full AMP runtime to render and were inert on
-     this non-AMP page. -->
+<!-- AdSense base library, used only by the manual <ins class="adsbygoogle">
+     units (sidebar x2 + break modal + mobile banner) elsewhere on this
+     page. Auto ads (enable_page_level_ads) is intentionally NOT enabled
+     here: its Vignette format rendered as a large box covering the video
+     with a non-functional close button, on this app's full-screen,
+     overflow:hidden layout. A Side rail-only restriction was considered
+     (a much less invasive format, pinned to genuinely empty page margin)
+     but this AdSense property is verified at the root domain (51sec.org),
+     and Auto ads format settings apply to that domain and ALL its
+     subdomains together — there's no way to enable Side rail here without
+     also changing Auto ads behavior on 51sec.org's other subdomains.
+     Auto ads is fully disabled specifically for this subdomain via a
+     Page exclusion in the AdSense dashboard (Ads → By site → Page
+     exclusions → https://xjj.51sec.org/), which is what actually
+     enforces this regardless of what this file requests — not calling
+     enable_page_level_ads here is just for clarity, not the enforcement
+     mechanism. Stick to the manual, explicitly-placed ad units instead. -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5660349373091698" crossorigin="anonymous"></script>
 <div id="ezoic-pub-ad-placeholder-608"></div>
 <div id="ezoic-pub-ad-placeholder-143"></div>
