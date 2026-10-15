@@ -67,7 +67,7 @@ const SOURCES = [
 - `type: 'api'` — the URL is set directly as the video's `src` (useful for APIs that redirect or stream a video per request).
 - `type: 'api-fetch'` — the URL is fetched first, and its plain-text response body (a video URL) is then used as the video `src`. Add `responseFormat: 'json'` when the endpoint returns JSON with the URL in `items[0].videoUrl` or `urls[0]`.
 
-The pre-configured **Jiejie UK** source uses `https://jiejie.uk/api/video?count=1&source=all&anon=1`, which returns a JSON response containing a direct MP4 URL. Playback routes through the configured `videoProxyBase` because Jiejie's media host requires a `Referer: https://jiejie.uk/` header. The endpoint and proxy are third-party and may change or limit requests.
+The pre-configured **Jiejie UK** source uses `https://jiejie.uk/api/video?count=1&source=all&anon=1`, which returns a JSON response containing a direct MP4 URL. Playback routes through the [Cloudflare Worker proxy](https://xjj-proxy-jiejie.51sec.workers.dev/) configured as `videoProxyBase`, because Jiejie's media host requires a `Referer: https://jiejie.uk/` header. The endpoint and proxy are third-party and may change or limit requests.
 
 You can also add a source at runtime without editing the file — use the "Custom Source" form in the sidebar (desktop) or the "+" button in the top bar (mobile), pick the source type, and paste the URL.
 
