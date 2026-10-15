@@ -1264,6 +1264,7 @@ const SOURCES = [
   { id: 9, label: 'NRZJ TikTok 2',  type: 'api',                  url: 'http://video.nrzj.vip/tiktok/video.php'             },
   { id:10, label: 'PF129',          type: 'api-fetch',            url: 'https://netsec.alwaysdata.net/proxy.php?src=https%3A%2F%2Fpf129.com%2Fxjj%2Fget%2Fget1.php' },
   { id:11, label: 'WPON Girl',      type: 'api-fetch',            url: 'https://netsec.alwaysdata.net/proxy.php?src=https%3A%2F%2Ftucdn.wpon.cn%2Fapi-girl%2Findex.php%3Fwpon%3Durl' },
+  { id:12, label: 'Jiejie UK',      type: 'api-fetch', responseFormat: 'json', videoProxyBase: 'https://xjj-proxy-jiejie.51sec.workers.dev/video/', url: 'https://jiejie.uk/api/video?count=1&source=all&anon=1' },
 ];
 
 const MAX_API_RETRIES     = 5;
@@ -1405,7 +1406,26 @@ function playCurrentVideo() {
     showOverlay('Fetching URL…');
     const fetchUrl = src.url + (src.url.includes('?') ? '&' : '?') + '_=' + Date.now();
     fetch(fetchUrl)
-      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+      .then(async r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        if (src.responseFormat === 'json') {
+          const data = await r.json();
+          if (!data || data.code !== 200) throw new Error('Invalid JSON API response');
+          const itemUrl = Array.isArray(data.items) ? data.items[0]?.videoUrl : '';
+          const url = itemUrl || (Array.isArray(data.urls) ? data.urls[0] : '');
+          if (typeof url !== 'string') throw new Error('No video URL returned');
+          if (src.videoProxyBase) {
+            const videoUrl = new URL(url);
+            const match = videoUrl.hostname === 'b1.jiejie.uk'
+              ? videoUrl.pathname.match(/^\/([a-f0-9]{16})\.mp4$/i)
+              : null;
+            if (!match) throw new Error('Unexpected video host or URL');
+            return src.videoProxyBase + match[1] + '.mp4';
+          }
+          return url;
+        }
+        return r.text();
+      })
       .then(text => {
         let mp4url = text.trim();
         // Some APIs return a protocol-relative URL (e.g. "//host/path.mp4")
